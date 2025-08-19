@@ -1,6 +1,72 @@
-﻿@{
+﻿@model IEnumerable<hrms.Models.Employee>
+
+@{
     ViewData["Title"] = "HR Dashboard";
+    Layout = "~/Views/Shared/_HrLayout.cshtml";
 }
 
-<h1>Welcome to the HR Dashboard</h1>
-<p>This is the landing page for HR Managers.</p>
+<div class="container-fluid">
+    <h2 class="mb-4">Dashboard Overview</h2>
+
+    <!-- Dashboard Stats Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <div class="card-icon"><i class="fas fa-users"></i></div>
+                <h5>Total Employees</h5>
+                <h2 class="card-title">@ViewBag.TotalEmployees</h2>
+            </div>
+        </div>
+        <!-- Add other stat cards here as needed -->
+    </div>
+
+    <!-- Employee List Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Employee Overview</h4>
+                    <a asp-controller="Hr" asp-action="Add" class="btn btn-primary"><i class="fas fa-plus"></i> Add New Employee</a>
+                </div>
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Department</th>
+                            <th>Position</th>
+                            <th>Email</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var employee in Model)
+                            {
+                                <tr>
+                                    <td>@employee.FirstName</td>
+                                    <td>@employee.LastName</td>
+                                    <td>@employee.Department</td>
+                                    <td>@employee.Position</td>
+                                    <td>@employee.Email</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
+                                        <a href="#" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                                        <a href="#" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center">No employees found. Click "Add New Employee" to begin.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

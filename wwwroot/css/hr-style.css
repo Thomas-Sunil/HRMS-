@@ -1,0 +1,120 @@
+﻿:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --sidebar-bg: #2c3e50;
+    --sidebar-text: #ecf0f1;
+    --sidebar-hover: #34495e;
+    --content-bg: #f8f9fa;
+    --card-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--content-bg);
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 0 20px 20px 20px;
+    text-align: center;
+    border-bottom: 1px solid #4a627a;
+}
+
+    .sidebar-header h3 {
+        margin: 0;
+        font-weight: 600;
+    }
+
+.sidebar .nav-link {
+    color: var(--sidebar-text);
+    padding: 12px 20px;
+    transition: background-color 0.3s;
+}
+
+    .sidebar .nav-link i {
+        margin-right: 15px;
+        width: 20px; /* Aligns text */
+    }
+
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+        background-color: var(--sidebar-hover);
+        border-left: 3px solid var(--primary-color);
+    }
+
+.main-content {
+    margin-left: 250px;
+    transition: margin-left 0.3s;
+}
+
+.top-header {
+    background: #fff;
+    padding: 15px 30px;
+    border-bottom: 1px solid #dee2e6;
+    box-shadow: var(--card-shadow);
+}
+
+.user-profile {
+    font-weight: 500;
+}
+
+    .user-profile i {
+        font-size: 1.5rem;
+        margin-right: 10px;
+        color: var(--primary-color);
+    }
+
+.dashboard-card {
+    background: #fff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+    .dashboard-card .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        color: var(--primary-color);
+    }
+
+    .dashboard-card h5 {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+
+    .dashboard-card .card-title {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+.table-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: var(--card-shadow);
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border: none;
+}
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }

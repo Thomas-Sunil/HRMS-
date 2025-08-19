@@ -1,21 +1,19 @@
-// ---- START: ADD THESE USING STATEMENTS ----
 using hrms.Data;
 using Microsoft.EntityFrameworkCore;
-// ---- END: ADD THESE USING STATEMENTS ----
+
+// This line tells the Npgsql driver to disable the new, strict
+// UTC timezone requirement for DateTime objects.
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-
-// ---- START: ADD THIS DATABASE CONFIGURATION SECTION ----
-// This is the crucial part that was missing.
-// It reads your connection string and sets up the PostgreSQL database connection.
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// This section configures the database connection.
+// The typo has been fixed here.
+builder.Services.AddDbContext<ApplicationDbContext>(options => // <-- CORRECTED LINE
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-// ---- END: ADD THIS DATABASE CONFIGURATION SECTION ----
-
 
 var app = builder.Build();
 
