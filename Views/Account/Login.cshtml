@@ -1,0 +1,122 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Login - HRMS</title>
+    <style>
+        /* Your CSS styles remain the same */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+            .login-container h2 {
+                margin-bottom: 20px;
+                color: #333;
+            }
+
+            .login-container input[type="text"],
+            .login-container input[type="password"] {
+                width: calc(100% - 20px);
+                padding: 10px;
+                margin-bottom: 20px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+            }
+
+            .login-container .role-selector {
+                margin-bottom: 20px;
+                text-align: left;
+            }
+
+                .login-container .role-selector label {
+                    margin-right: 20px;
+                    color: #555;
+                }
+
+            .login-container input[type="submit"] {
+                width: 100%;
+                padding: 12px;
+                background-color: #007bff;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+                .login-container input[type="submit"]:hover {
+                    background-color: #0056b3;
+                }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>HRMS Login</h2>
+        <form asp-controller="Account" asp-action="Login" method="post" id="loginForm">
+            <div class="role-selector">
+                <input type="radio" id="hrManager" name="role" value="hr" checked>
+                <label for="hrManager">HR Manager</label>
+
+                <input type="radio" id="manager" name="role" value="manager">
+                <label for="manager">Manager</label>
+
+                <input type="radio" id="employee" name="role" value="employee">
+                <label for="employee">Employee</label>
+            </div>
+            <input type="text" id="username" name="username" placeholder="Username" required>
+            <input type="password" id="password" name="password" placeholder="Password" required>
+            <input type="submit" value="Login">
+            <div id="errorMessage" style="color:red; margin-top:10px;"></div>
+        </form>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#loginForm').on('submit', function (e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                var formData = $(this).serialize(); // Gathers form data
+
+                $.ajax({
+                    type: 'POST',
+                    url: $(this).attr('action'),
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            // If login is successful, redirect to the new page
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            // If login fails, show an error message
+                            $('#errorMessage').text(response.message);
+                        }
+                    },
+                    error: function () {
+                        $('#errorMessage').text('An error occurred. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
