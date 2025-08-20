@@ -20,7 +20,7 @@ namespace hrms.Models
         [Column("phone_number")]
         public string PhoneNumber { get; set; }
 
-        [Column("department_id")] // This must match the database column
+        [Column("department_id")]
         public int? DepartmentId { get; set; }
         public Department Department { get; set; }
 

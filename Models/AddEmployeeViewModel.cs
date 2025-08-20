@@ -19,10 +19,6 @@ namespace hrms.Models
         [Display(Name = "Phone Number")]
         public string PhoneNumber { get; set; }
 
-        // This is the line that was changed. The [Required] attribute was removed.
-        [Display(Name = "Department")]
-        public int? DepartmentId { get; set; }
-
         [Required(ErrorMessage = "Position is required.")]
         public string Position { get; set; }
 

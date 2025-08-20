@@ -20,9 +20,9 @@ namespace hrms.Controllers
             return View(employees);
         }
 
-        public async Task<IActionResult> Add()
+        // GET action is now very simple.
+        public IActionResult Add()
         {
-            await PopulateDepartmentsViewBag();
             return View();
         }
 
@@ -32,64 +32,58 @@ namespace hrms.Controllers
         {
             if (ModelState.IsValid)
             {
-                // This is the corrected check for duplicate usernames
                 if (await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower()))
                 {
                     ModelState.AddModelError("Username", "This username is already taken.");
-                    await PopulateDepartmentsViewBag(model.DepartmentId);
                     return View(model);
                 }
 
-                // This is the corrected check for duplicate emails
                 if (await _context.Employees.AnyAsync(e => e.Email.ToLower() == model.Email.ToLower()))
                 {
                     ModelState.AddModelError("Email", "This email is already registered.");
-                    await PopulateDepartmentsViewBag(model.DepartmentId);
                     return View(model);
                 }
 
-                await using (var transaction = await _context.Database.BeginTransactionAsync())
+                await using var transaction = await _context.Database.BeginTransactionAsync();
+                try
                 {
-                    try
+                    var newUser = new User
                     {
-                        var newUser = new User
-                        {
-                            Username = model.Username,
-                            PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
-                            Role = model.Role
-                        };
-                        _context.Users.Add(newUser);
-                        await _context.SaveChangesAsync();
+                        Username = model.Username,
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
+                        Role = model.Role
+                    };
+                    _context.Users.Add(newUser);
+                    await _context.SaveChangesAsync();
 
-                        var newEmployee = new Employee
-                        {
-                            FirstName = model.FirstName,
-                            LastName = model.LastName,
-                            Email = model.Email,
-                            PhoneNumber = model.PhoneNumber,
-                            DepartmentId = model.DepartmentId,
-                            Position = model.Position,
-                            DateOfJoining = model.DateOfJoining,
-                            UserId = newUser.Id
-                        };
-                        _context.Employees.Add(newEmployee);
-                        await _context.SaveChangesAsync();
-
-                        await transaction.CommitAsync();
-                        return RedirectToAction(nameof(Index));
-                    }
-                    catch (Exception ex)
+                    var newEmployee = new Employee
                     {
-                        await transaction.RollbackAsync();
-                        ModelState.AddModelError("", $"An unexpected error occurred: {ex.Message}");
-                    }
+                        FirstName = model.FirstName,
+                        LastName = model.LastName,
+                        Email = model.Email,
+                        PhoneNumber = model.PhoneNumber,
+                        // DepartmentId is now removed from this process. It will be null by default.
+                        Position = model.Position,
+                        DateOfJoining = model.DateOfJoining,
+                        UserId = newUser.Id
+                    };
+                    _context.Employees.Add(newEmployee);
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    ModelState.AddModelError("", $"An unexpected error occurred: {ex.Message}");
                 }
             }
 
-            await PopulateDepartmentsViewBag(model.DepartmentId);
             return View(model);
         }
 
+        // This helper method is no longer needed by the Add actions, but we keep it for other potential uses.
         private async Task PopulateDepartmentsViewBag(object selectedDepartment = null)
         {
             var departments = await _context.Departments

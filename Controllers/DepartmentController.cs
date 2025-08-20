@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace hrms.Controllers
 {
@@ -24,11 +23,8 @@ namespace hrms.Controllers
 
         public async Task<IActionResult> Create()
         {
-            var viewModel = new DepartmentViewModel
-            {
-                ManagerList = await GetManagerSelectList()
-            };
-            return View(viewModel);
+            await PopulateManagersViewBag();
+            return View(); // Send an empty ViewModel
         }
 
         [HttpPost]
@@ -48,7 +44,9 @@ namespace hrms.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            viewModel.ManagerList = await GetManagerSelectList(viewModel.HeadOfDepartmentId);
+
+            // If validation fails, repopulate the ViewBag and return the view
+            await PopulateManagersViewBag(viewModel.HeadOfDepartmentId);
             return View(viewModel);
         }
 
@@ -59,13 +57,14 @@ namespace hrms.Controllers
             var department = await _context.Departments.FindAsync(id);
             if (department == null) return NotFound();
 
+            await PopulateManagersViewBag(department.HeadOfDepartmentId);
+
             var viewModel = new DepartmentViewModel
             {
                 Id = department.Id,
                 Name = department.Name,
                 Description = department.Description,
-                HeadOfDepartmentId = department.HeadOfDepartmentId,
-                ManagerList = await GetManagerSelectList(department.HeadOfDepartmentId)
+                HeadOfDepartmentId = department.HeadOfDepartmentId
             };
 
             return View(viewModel);
@@ -93,22 +92,18 @@ namespace hrms.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!_context.Departments.Any(e => e.Id == viewModel.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    if (!_context.Departments.Any(e => e.Id == viewModel.Id)) { return NotFound(); }
+                    else { throw; }
                 }
                 return RedirectToAction(nameof(Index));
             }
-            viewModel.ManagerList = await GetManagerSelectList(viewModel.HeadOfDepartmentId);
+
+            // If validation fails, repopulate the ViewBag and return the view
+            await PopulateManagersViewBag(viewModel.HeadOfDepartmentId);
             return View(viewModel);
         }
 
-        private async Task<IEnumerable<SelectListItem>> GetManagerSelectList(object selectedValue = null)
+        private async Task PopulateManagersViewBag(object selectedValue = null)
         {
             var managers = await _context.Employees
                                          .Include(e => e.User)
@@ -117,31 +112,7 @@ namespace hrms.Controllers
                                          .ThenBy(e => e.LastName)
                                          .ToListAsync();
 
-            var selectList = new List<SelectListItem>
-            {
-                // This is the corrected line
-                new SelectListItem { Text = "-- None --", Value = "" }
-            };
-
-            selectList.AddRange(managers.Select(m => new SelectListItem
-            {
-                Value = m.Id.ToString(),
-                Text = m.FullName
-            }));
-
-            if (selectedValue != null)
-            {
-                foreach (var item in selectList)
-                {
-                    if (item.Value == selectedValue.ToString())
-                    {
-                        item.Selected = true;
-                        break;
-                    }
-                }
-            }
-
-            return selectList;
+            ViewBag.ManagerList = new SelectList(managers, "Id", "FullName", selectedValue);
         }
     }
 }

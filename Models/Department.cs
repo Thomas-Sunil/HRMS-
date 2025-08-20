@@ -24,11 +24,7 @@ namespace hrms.Models
         [ForeignKey("HeadOfDepartmentId")]
         public Employee HeadOfDepartment { get; set; }
 
-        // --- THIS IS THE FIX ---
-        // The InverseProperty attribute tells EF that the "Department" property
-        // on the Employee model is the other side of this relationship.
         [InverseProperty("Department")]
         public ICollection<Employee> Employees { get; set; }
-        // --- END FIX ---
     }
 }
