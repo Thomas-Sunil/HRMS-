@@ -48,14 +48,13 @@
                                     <td>@employee.FirstName</td>
                                     <td>@employee.LastName</td>
                                     <td>
-                                        @* This safely displays the department name or "N/A" if null *@
                                         @(employee.Department?.Name ?? "N/A")
                                     </td>
                                     <td>@employee.Position</td>
                                     <td>@employee.Email</td>
                                     <td>
                                         <a href="#" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>
-                                        <a href="#" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
+                                        <a asp-action="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit"></i></a>
                                         <a href="#" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></a>
                                     </td>
                                 </tr>

@@ -2,6 +2,10 @@
 using hrms.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using System.Security.Claims; // <-- Add this
+using Microsoft.AspNetCore.Authentication; // <-- Add this
+using Microsoft.AspNetCore.Authentication.Cookies; // <-- Add this
+using System.Threading.Tasks; // <-- Add this
 
 namespace hrms.Controllers
 {
@@ -20,43 +24,50 @@ namespace hrms.Controllers
             return View();
         }
 
+        // This method is now asynchronous
         [HttpPost]
-        public IActionResult Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            // This is the line that was missing. It finds the user in the database
-            // using a case-insensitive comparison that Entity Framework can translate to SQL.
-            var user = _context.Users.FirstOrDefault(u =>
-                u.Username.ToLower() == model.Username.ToLower());
+            var user = _context.Users.FirstOrDefault(u => u.Username.ToLower() == model.Username.ToLower());
 
-            // Check if the user exists and if the password is correct
             if (user != null && BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
             {
-                string redirectUrl;
-
-                switch (user.Role)
+                // --- START: User Sign In Logic ---
+                var claims = new[]
                 {
-                    case "hr":
-                        redirectUrl = Url.Action("Index", "Hr");
-                        break;
-                    case "manager":
-                        redirectUrl = Url.Action("Index", "Manager");
-                        break;
-                    case "employee":
-                        redirectUrl = Url.Action("Index", "Employee");
-                        break;
-                    default:
-                        // Default to the home page if role is unknown
-                        redirectUrl = Url.Action("Index", "Home");
-                        break;
-                }
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.Role, user.Role)
+                };
 
-                return Json(new { success = true, redirectUrl = redirectUrl });
+                var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity));
+                // --- END: User Sign In Logic ---
+
+                string redirectUrl = user.Role switch
+                {
+                    "hr" => Url.Action("Index", "Hr"),
+                    "manager" => Url.Action("Index", "Manager"),
+                    "employee" => Url.Action("Index", "Employee"),
+                    _ => Url.Action("Index", "Home")
+                };
+
+                return Json(new { success = true, redirectUrl });
             }
             else
             {
-                // If user is null or password fails, return an error
                 return Json(new { success = false, message = "Invalid username or password." });
             }
+        }
+
+        // --- ADD THIS NEW LOGOUT ACTION ---
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Account");
         }
     }
 }

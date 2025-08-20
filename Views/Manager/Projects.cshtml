@@ -1,0 +1,72 @@
+﻿@model hrms.Models.EmployeeProjectsViewModel
+
+@{
+    ViewData["Title"] = $"Projects for {Model.Employee.FullName}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <h2 class="mb-4">Manage Projects for: @Model.Employee.FullName</h2>
+
+    <!-- Section to create a new project -->
+    <div class="card mb-5">
+        <div class="card-header">
+            <h4><i class="fas fa-plus"></i> Assign New Project</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="Projects" asp-route-id="@Model.Employee.Id" method="post">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="NewProjectName"></label>
+                        <input asp-for="NewProjectName" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="NewProjectDeadline"></label>
+                        <input asp-for="NewProjectDeadline" type="date" class="form-control" />
+                    </div>
+                </div>
+                <div class="form-group mb-3">
+                    <label asp-for="NewProjectDescription"></label>
+                    <textarea asp-for="NewProjectDescription" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Assign Project" class="btn btn-primary" />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Section to display existing projects -->
+    <h4>Existing Projects</h4>
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Status</th>
+                    <th>Deadline</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var project in Model.Projects)
+                {
+                    <tr>
+                        <td>@project.Name</td>
+                        <td><span class="badge bg-info">@project.Status</span></td>
+                        <td>@project.Deadline?.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <!-- Feedback button would go here -->
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Projects.Any())
+                {
+                    <tr><td colspan="4" class="text-center">No projects assigned yet.</td></tr>
+                }
+            </tbody>
+        </table>
+        <a asp-action="Index" class="btn btn-secondary mt-3">Back to Team Dashboard</a>
+    </div>
+</div>

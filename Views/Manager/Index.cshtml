@@ -1,12 +1,103 @@
-﻿@{
+﻿@model hrms.Models.ManagerDashboardViewModel
+
+@{
     ViewData["Title"] = "Manager Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container">
     <div class="text-center">
-        <h1 class="display-4">Welcome, Manager!</h1>
-        <p>This is the Manager Dashboard. From here you can manage your team, approve leaves, and view reports.</p>
-        <hr />
-        <a href="@Url.Action("Login", "Account")" class="btn btn-danger">Logout</a>
+        <h1 class="display-4">Manager Dashboard</h1>
+        <p class="lead">Welcome, @Model.Manager.FullName. You are the manager of the <strong>@(Model.Manager.Department?.Name ?? "Unassigned")</strong> department.</p>
+
+        <!-- This is a new line that displays the error message if a manager isn't in a department -->
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert alert-warning mt-3">@ViewBag.ErrorMessage</div>
+        }
+    </div>
+
+    <hr />
+
+    <!-- Section for Current Team Members -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3>My Team</h3>
+            <div class="table-container">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Position</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.TeamMembers.Any())
+                        {
+                            @foreach (var member in Model.TeamMembers)
+                            {
+                                <tr>
+                                    <td>@member.FullName</td>
+                                    <td>@member.Position</td>
+                                    <td>
+                                        <!-- This link is now corrected -->
+                                        <a asp-action="Projects" asp-route-id="@member.Id" class="btn btn-sm btn-outline-primary">View/Add Projects</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="3" class="text-center">Your team is empty. Assign an employee below.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <hr />
+
+    <!-- Section for Unassigned Employees -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3>Unassigned Employees</h3>
+            <div class="table-container">
+                <table class="table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Position</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.UnassignedEmployees.Any())
+                        {
+                            @foreach (var unassigned in Model.UnassignedEmployees)
+                            {
+                                <tr>
+                                    <td>@unassigned.FullName</td>
+                                    <td>@unassigned.Position</td>
+                                    <td>
+                                        <form asp-action="AssignToTeam" method="post">
+                                            <input type="hidden" name="employeeId" value="@unassigned.Id" />
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                Assign to my team
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="3" class="text-center">No unassigned employees available.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
