@@ -4,8 +4,6 @@ namespace hrms.Models
 {
     public class AddEmployeeViewModel
     {
-        // --- Fields for Employee Details ---
-
         [Required(ErrorMessage = "First name is required.")]
         [Display(Name = "First Name")]
         public string FirstName { get; set; }
@@ -21,8 +19,9 @@ namespace hrms.Models
         [Display(Name = "Phone Number")]
         public string PhoneNumber { get; set; }
 
-        [Required(ErrorMessage = "Department is required.")]
-        public string Department { get; set; }
+        // This is the line that was changed. The [Required] attribute was removed.
+        [Display(Name = "Department")]
+        public int? DepartmentId { get; set; }
 
         [Required(ErrorMessage = "Position is required.")]
         public string Position { get; set; }
@@ -31,9 +30,6 @@ namespace hrms.Models
         [DataType(DataType.Date)]
         [Display(Name = "Date of Joining")]
         public DateTime DateOfJoining { get; set; }
-
-
-        // --- Fields for creating the User Login ---
 
         [Required(ErrorMessage = "Username is required.")]
         public string Username { get; set; }

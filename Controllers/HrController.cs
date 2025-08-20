@@ -1,6 +1,7 @@
 ﻿using hrms.Data;
 using hrms.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
@@ -15,12 +16,13 @@ namespace hrms.Controllers
         public async Task<IActionResult> Index()
         {
             ViewBag.TotalEmployees = await _context.Employees.CountAsync();
-            var employees = await _context.Employees.ToListAsync();
+            var employees = await _context.Employees.Include(e => e.Department).ToListAsync();
             return View(employees);
         }
 
-        public IActionResult Add()
+        public async Task<IActionResult> Add()
         {
+            await PopulateDepartmentsViewBag();
             return View();
         }
 
@@ -30,14 +32,19 @@ namespace hrms.Controllers
         {
             if (ModelState.IsValid)
             {
-                if (await _context.Users.AnyAsync(u => u.Username == model.Username))
+                // This is the corrected check for duplicate usernames
+                if (await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower()))
                 {
                     ModelState.AddModelError("Username", "This username is already taken.");
+                    await PopulateDepartmentsViewBag(model.DepartmentId);
                     return View(model);
                 }
-                if (await _context.Employees.AnyAsync(e => e.Email == model.Email))
+
+                // This is the corrected check for duplicate emails
+                if (await _context.Employees.AnyAsync(e => e.Email.ToLower() == model.Email.ToLower()))
                 {
                     ModelState.AddModelError("Email", "This email is already registered.");
+                    await PopulateDepartmentsViewBag(model.DepartmentId);
                     return View(model);
                 }
 
@@ -49,7 +56,7 @@ namespace hrms.Controllers
                         {
                             Username = model.Username,
                             PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Password),
-                            Role = model.Role // Use the role from the form
+                            Role = model.Role
                         };
                         _context.Users.Add(newUser);
                         await _context.SaveChangesAsync();
@@ -60,7 +67,7 @@ namespace hrms.Controllers
                             LastName = model.LastName,
                             Email = model.Email,
                             PhoneNumber = model.PhoneNumber,
-                            Department = model.Department,
+                            DepartmentId = model.DepartmentId,
                             Position = model.Position,
                             DateOfJoining = model.DateOfJoining,
                             UserId = newUser.Id
@@ -69,7 +76,6 @@ namespace hrms.Controllers
                         await _context.SaveChangesAsync();
 
                         await transaction.CommitAsync();
-
                         return RedirectToAction(nameof(Index));
                     }
                     catch (Exception ex)
@@ -79,7 +85,17 @@ namespace hrms.Controllers
                     }
                 }
             }
+
+            await PopulateDepartmentsViewBag(model.DepartmentId);
             return View(model);
+        }
+
+        private async Task PopulateDepartmentsViewBag(object selectedDepartment = null)
+        {
+            var departments = await _context.Departments
+                                            .OrderBy(d => d.Name)
+                                            .ToListAsync();
+            ViewBag.Departments = new SelectList(departments, "Id", "Name", selectedDepartment);
         }
     }
 }

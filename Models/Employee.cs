@@ -20,8 +20,9 @@ namespace hrms.Models
         [Column("phone_number")]
         public string PhoneNumber { get; set; }
 
-        [Column("department")]
-        public string Department { get; set; }
+        [Column("department_id")] // This must match the database column
+        public int? DepartmentId { get; set; }
+        public Department Department { get; set; }
 
         [Column("position")]
         public string Position { get; set; }
@@ -31,9 +32,9 @@ namespace hrms.Models
 
         [Column("user_id")]
         public int UserId { get; set; }
-
-        // This is a "navigation property" and does not map to a database column,
-        // so it does NOT get a [Column] attribute.
         public User User { get; set; }
+
+        [NotMapped]
+        public string FullName => $"{FirstName} {LastName}";
     }
 }

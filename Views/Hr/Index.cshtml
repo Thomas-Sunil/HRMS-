@@ -47,7 +47,10 @@
                                 <tr>
                                     <td>@employee.FirstName</td>
                                     <td>@employee.LastName</td>
-                                    <td>@employee.Department</td>
+                                    <td>
+                                        @* This safely displays the department name or "N/A" if null *@
+                                        @(employee.Department?.Name ?? "N/A")
+                                    </td>
                                     <td>@employee.Position</td>
                                     <td>@employee.Email</td>
                                     <td>
