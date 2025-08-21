@@ -1,46 +1,58 @@
 ﻿@model IEnumerable<hrms.Models.Employee>
+
 @{
-    ViewData["Title"] = "My Team"; Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "My Team";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml"; // This is the corrected line
 }
 
-<div class="container">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>My Team</h2>
         <div>
+            @if (ViewBag.ErrorMessage != null)
+            {
+                <div class="alert alert-warning d-inline-block me-3">@ViewBag.ErrorMessage</div>
+            }
             <a asp-action="Projects" class="btn btn-primary">Manage Projects</a>
             <a asp-action="Assign" class="btn btn-success"><i class="fas fa-plus"></i> Assign New Employee</a>
         </div>
     </div>
-    <table class="table table-hover">
-        <thead class="table-light"><tr><th>Name</th><th>Position</th><th>Project Status</th><th>Actions</th></tr></thead>
-        <tbody>
-            @foreach (var member in Model)
-            {
+    <div class="table-container">
+        <table class="table table-hover">
+            <thead class="table-light">
                 <tr>
-                    <td>@member.FullName</td>
-                    <td>@member.Position</td>
-                    <td>
-                        @if (member.Projects.Any())
-                        {
-                            <span class="badge bg-success">Assigned</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-secondary">Available</span>
-                        }
-                    </td>
-                    <td><a asp-action="Projects" class="btn btn-sm btn-outline-info">View All Projects</a></td>
-                    <td>
-                        <a asp-action="Projects" asp-route-id="@member.Id" class="btn btn-sm btn-outline-primary">View Projects</a>
-                        <!-- ADD THIS FORM -->
-                        <form asp-action="UnassignFromTeam" method="post" class="d-inline">
-                            <input type="hidden" name="employeeId" value="@member.Id" />
-                            <button type="submit" class="btn btn-sm btn-outline-warning">Unassign</button>
-                        </form>
-                    </td>
+                    <th>Name</th>
+                    <th>Position</th>
+                    <th>Project Status</th>
+                    <th>Actions</th>
                 </tr>
-
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var member in Model)
+                {
+                    <tr>
+                        <td>@member.FullName</td>
+                        <td>@member.Position</td>
+                        <td>
+                            @if (member.Projects.Any())
+                            {
+                                <span class="badge bg-success">Assigned</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Available</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Projects" asp-route-id="@member.Id" class="btn btn-sm btn-outline-primary">View/Add Projects</a>
+                            <form asp-action="UnassignFromTeam" method="post" class="d-inline">
+                                <input type="hidden" name="employeeId" value="@member.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-warning">Unassign</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>

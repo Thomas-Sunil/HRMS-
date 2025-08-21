@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace hrms.Controllers
 {
+    // You can add [Authorize(Roles="hr")] here to protect the whole controller
     public class HrController(ApplicationDbContext context) : Controller
     {
         private readonly ApplicationDbContext _context = context;
@@ -16,12 +17,14 @@ namespace hrms.Controllers
         public async Task<IActionResult> Index()
         {
             ViewBag.TotalEmployees = await _context.Employees.CountAsync();
-            var employees = await _context.Employees.Include(e => e.Department).ToListAsync();
+            var employees = await _context.Employees
+                .Include(e => e.Department)
+                .Include(e => e.Projects) // Include project data for status display
+                .ToListAsync();
             return View(employees);
         }
 
-        // GET action is now very simple.
-        public IActionResult Add()
+        public async Task<IActionResult> Add()
         {
             return View();
         }
@@ -32,18 +35,19 @@ namespace hrms.Controllers
         {
             if (ModelState.IsValid)
             {
+                // Username and email checks
                 if (await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower()))
                 {
                     ModelState.AddModelError("Username", "This username is already taken.");
                     return View(model);
                 }
-
                 if (await _context.Employees.AnyAsync(e => e.Email.ToLower() == model.Email.ToLower()))
                 {
                     ModelState.AddModelError("Email", "This email is already registered.");
                     return View(model);
                 }
 
+                // Transaction to create user and employee
                 await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
@@ -62,7 +66,6 @@ namespace hrms.Controllers
                         LastName = model.LastName,
                         Email = model.Email,
                         PhoneNumber = model.PhoneNumber,
-                        // DepartmentId is now removed from this process. It will be null by default.
                         Position = model.Position,
                         DateOfJoining = model.DateOfJoining,
                         UserId = newUser.Id
@@ -79,13 +82,12 @@ namespace hrms.Controllers
                     ModelState.AddModelError("", $"An unexpected error occurred: {ex.Message}");
                 }
             }
-
             return View(model);
         }
+
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
-
             var employee = await _context.Employees.FindAsync(id);
             if (employee == null) return NotFound();
 
@@ -104,7 +106,6 @@ namespace hrms.Controllers
             return View(viewModel);
         }
 
-        // POST: /Hr/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditEmployeeViewModel viewModel)
@@ -123,29 +124,32 @@ namespace hrms.Controllers
                 employeeToUpdate.DepartmentId = viewModel.DepartmentId;
                 employeeToUpdate.Position = viewModel.Position;
 
-                try
-                {
-                    _context.Update(employeeToUpdate);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    // Handle concurrency error if needed
-                    throw;
-                }
+                _context.Update(employeeToUpdate);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            // If model is invalid, repopulate dropdown and return view
+
             await PopulateDepartmentsViewBag(viewModel.DepartmentId);
             return View(viewModel);
         }
 
-        // This helper method is no longer needed by the Add actions, but we keep it for other potential uses.
+        // This new action handles unassigning an employee from a department.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnassignFromDepartment(int employeeId)
+        {
+            var employee = await _context.Employees.FindAsync(employeeId);
+            if (employee != null)
+            {
+                employee.DepartmentId = null;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
         private async Task PopulateDepartmentsViewBag(object selectedDepartment = null)
         {
-            var departments = await _context.Departments
-                                            .OrderBy(d => d.Name)
-                                            .ToListAsync();
+            var departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
             ViewBag.Departments = new SelectList(departments, "Id", "Name", selectedDepartment);
         }
     }

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace hrms.Controllers
 {
@@ -16,18 +17,27 @@ namespace hrms.Controllers
         private async Task<Employee> GetCurrentManagerAsync()
         {
             var username = HttpContext.User.Identity.Name;
+            if (string.IsNullOrEmpty(username)) return null;
+
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
             if (user == null) return null;
+
             return await _context.Employees.Include(e => e.Department).FirstOrDefaultAsync(e => e.UserId == user.Id);
         }
 
         public async Task<IActionResult> Index()
         {
             var manager = await GetCurrentManagerAsync();
-            if (manager?.DepartmentId == null)
+            if (manager == null)
+            {
+                ViewBag.ErrorMessage = "Could not find a valid employee profile for the logged-in manager.";
+                return View(new List<Employee>());
+            }
+
+            if (manager.DepartmentId == null)
             {
                 ViewBag.ErrorMessage = "You are not assigned to a department. Please contact HR.";
-                return View(new List<Employee>()); // Return an empty list to the view
+                return View(new List<Employee>());
             }
 
             var teamMembers = await _context.Employees
@@ -35,13 +45,16 @@ namespace hrms.Controllers
                 .Include(e => e.Projects)
                 .ToListAsync();
 
-            return View(teamMembers);
+            return View(teamMembers ?? new List<Employee>());
         }
 
         public async Task<IActionResult> Assign()
         {
-            var unassignedEmployees = await _context.Employees.Where(e => e.DepartmentId == null).ToListAsync();
-            return View(unassignedEmployees);
+            var unassignedEmployees = await _context.Employees
+                .Where(e => e.DepartmentId == null)
+                .ToListAsync();
+
+            return View(unassignedEmployees ?? new List<Employee>());
         }
 
         [HttpPost]
@@ -61,11 +74,14 @@ namespace hrms.Controllers
         public async Task<IActionResult> Projects()
         {
             var manager = await GetCurrentManagerAsync();
+            if (manager == null) return NotFound();
+
             var projects = await _context.Projects
                 .Where(p => p.ManagerId == manager.Id)
                 .Include(p => p.AssignedEmployees)
                 .ToListAsync();
-            return View(projects);
+
+            return View(projects ?? new List<Project>());
         }
 
         [HttpPost]
@@ -73,14 +89,14 @@ namespace hrms.Controllers
         public async Task<IActionResult> CreateProject(string projectName, string projectDescription, DateTime? projectDeadline)
         {
             var manager = await GetCurrentManagerAsync();
+            if (manager == null) return NotFound();
+
             var project = new Project
             {
                 Name = projectName,
                 Description = projectDescription,
                 Deadline = projectDeadline,
                 ManagerId = manager.Id,
-                // --- THIS IS THE FIX ---
-                // We must provide a value for the non-nullable Status field.
                 Status = "Not Started"
             };
             _context.Projects.Add(project);
@@ -91,7 +107,10 @@ namespace hrms.Controllers
         public async Task<IActionResult> ProjectDetails(int id)
         {
             var manager = await GetCurrentManagerAsync();
+            if (manager == null) return NotFound();
+
             var project = await _context.Projects.Include(p => p.AssignedEmployees).FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null) return NotFound();
 
             var availableMembers = await _context.Employees
                 .Where(e => e.DepartmentId == manager.DepartmentId && !e.Projects.Any())
@@ -100,7 +119,7 @@ namespace hrms.Controllers
             var viewModel = new ProjectDetailsViewModel
             {
                 Project = project,
-                AvailableTeamMembers = availableMembers
+                AvailableTeamMembers = availableMembers ?? new List<Employee>()
             };
             return View(viewModel);
         }
@@ -126,10 +145,8 @@ namespace hrms.Controllers
             var manager = await GetCurrentManagerAsync();
             var employee = await _context.Employees.FindAsync(employeeId);
 
-            // You can only unassign someone if they are actually in your department
             if (manager?.DepartmentId != null && employee?.DepartmentId == manager.DepartmentId)
             {
-                // Unassign by setting department to null
                 employee.DepartmentId = null;
                 await _context.SaveChangesAsync();
             }
@@ -143,7 +160,6 @@ namespace hrms.Controllers
             var manager = await GetCurrentManagerAsync();
             var project = await _context.Projects.FindAsync(projectId);
 
-            // You can only delete projects you own
             if (project != null && project.ManagerId == manager.Id)
             {
                 _context.Projects.Remove(project);
@@ -162,10 +178,8 @@ namespace hrms.Controllers
 
             var employee = await _context.Employees.FindAsync(employeeId);
 
-            // If both exist and the employee is in the project's assigned list...
             if (project != null && employee != null && project.AssignedEmployees.Any(e => e.Id == employeeId))
             {
-                // ...remove them from the collection.
                 project.AssignedEmployees.Remove(employee);
                 await _context.SaveChangesAsync();
             }

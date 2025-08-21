@@ -1,0 +1,51 @@
+﻿@model hrms.Models.AttendanceWidgetViewModel
+
+<div class="card bg-light border-0">
+    <div class="card-body p-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <!-- Left Side: Status and Buttons -->
+            <div class="d-flex align-items-center">
+                @if (Model.CanClockIn)
+                {
+                    <form asp-controller="Attendance" asp-action="ClockIn" method="post" class="me-2">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-play me-1"></i> Clock In
+                        </button>
+                    </form>
+                }
+
+                @if (Model.CanClockOut)
+                {
+                    <form asp-controller="Attendance" asp-action="ClockOut" method="post" class="me-2">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-stop me-1"></i> Clock Out
+                        </button>
+                    </form>
+                }
+
+                @if (Model.IsCompleted)
+                {
+                    <div class="d-flex align-items-center text-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span>Work Day Complete</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Side: Clock In Time and Date -->
+            <div class="text-end">
+                @if (Model.ClockInTime.HasValue)
+                {
+                    <div style="line-height: 1.2;">
+                        <small class="text-muted d-block">Clocked In</small>
+                        <strong>@Model.ClockInTime.Value.ToString(@"hh\:mm\:ss")</strong>
+                    </div>
+                }
+                else
+                {
+                    <small class="text-muted d-block">@Model.TodaysDate</small>
+                }
+            </div>
+        </div>
+    </div>
+</div>
