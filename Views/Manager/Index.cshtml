@@ -1,103 +1,46 @@
-﻿@model hrms.Models.ManagerDashboardViewModel
-
+﻿@model IEnumerable<hrms.Models.Employee>
 @{
-    ViewData["Title"] = "Manager Dashboard";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "My Team"; Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="container">
-    <div class="text-center">
-        <h1 class="display-4">Manager Dashboard</h1>
-        <p class="lead">Welcome, @Model.Manager.FullName. You are the manager of the <strong>@(Model.Manager.Department?.Name ?? "Unassigned")</strong> department.</p>
-
-        <!-- This is a new line that displays the error message if a manager isn't in a department -->
-        @if (ViewBag.ErrorMessage != null)
-        {
-            <div class="alert alert-warning mt-3">@ViewBag.ErrorMessage</div>
-        }
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>My Team</h2>
+        <div>
+            <a asp-action="Projects" class="btn btn-primary">Manage Projects</a>
+            <a asp-action="Assign" class="btn btn-success"><i class="fas fa-plus"></i> Assign New Employee</a>
+        </div>
     </div>
-
-    <hr />
-
-    <!-- Section for Current Team Members -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <h3>My Team</h3>
-            <div class="table-container">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Employee Name</th>
-                            <th>Position</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.TeamMembers.Any())
+    <table class="table table-hover">
+        <thead class="table-light"><tr><th>Name</th><th>Position</th><th>Project Status</th><th>Actions</th></tr></thead>
+        <tbody>
+            @foreach (var member in Model)
+            {
+                <tr>
+                    <td>@member.FullName</td>
+                    <td>@member.Position</td>
+                    <td>
+                        @if (member.Projects.Any())
                         {
-                            @foreach (var member in Model.TeamMembers)
-                            {
-                                <tr>
-                                    <td>@member.FullName</td>
-                                    <td>@member.Position</td>
-                                    <td>
-                                        <!-- This link is now corrected -->
-                                        <a asp-action="Projects" asp-route-id="@member.Id" class="btn btn-sm btn-outline-primary">View/Add Projects</a>
-                                    </td>
-                                </tr>
-                            }
+                            <span class="badge bg-success">Assigned</span>
                         }
                         else
                         {
-                            <tr><td colspan="3" class="text-center">Your team is empty. Assign an employee below.</td></tr>
+                            <span class="badge bg-secondary">Available</span>
                         }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+                    </td>
+                    <td><a asp-action="Projects" class="btn btn-sm btn-outline-info">View All Projects</a></td>
+                    <td>
+                        <a asp-action="Projects" asp-route-id="@member.Id" class="btn btn-sm btn-outline-primary">View Projects</a>
+                        <!-- ADD THIS FORM -->
+                        <form asp-action="UnassignFromTeam" method="post" class="d-inline">
+                            <input type="hidden" name="employeeId" value="@member.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-warning">Unassign</button>
+                        </form>
+                    </td>
+                </tr>
 
-    <hr />
-
-    <!-- Section for Unassigned Employees -->
-    <div class="row mt-5">
-        <div class="col-12">
-            <h3>Unassigned Employees</h3>
-            <div class="table-container">
-                <table class="table">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Employee Name</th>
-                            <th>Position</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.UnassignedEmployees.Any())
-                        {
-                            @foreach (var unassigned in Model.UnassignedEmployees)
-                            {
-                                <tr>
-                                    <td>@unassigned.FullName</td>
-                                    <td>@unassigned.Position</td>
-                                    <td>
-                                        <form asp-action="AssignToTeam" method="post">
-                                            <input type="hidden" name="employeeId" value="@unassigned.Id" />
-                                            <button type="submit" class="btn btn-sm btn-success">
-                                                Assign to my team
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr><td colspan="3" class="text-center">No unassigned employees available.</td></tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+            }
+        </tbody>
+    </table>
 </div>

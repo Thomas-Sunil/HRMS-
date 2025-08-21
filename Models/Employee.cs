@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Collections.Generic; // Required for ICollection
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace hrms.Models
 {
@@ -28,11 +29,20 @@ namespace hrms.Models
         public string Position { get; set; }
 
         [Column("date_of_joining")]
-        public DateTime DateOfJoining { get; set; }
+        public System.DateTime DateOfJoining { get; set; }
 
         [Column("user_id")]
         public int UserId { get; set; }
         public User User { get; set; }
+
+        // This represents the many-to-many relationship for projects an employee is assigned to.
+        public ICollection<Project> Projects { get; set; } = new List<Project>();
+
+        // --- THIS IS THE MISSING PIECE ---
+        // This represents the one-to-many relationship for projects this employee MANAGES.
+        [InverseProperty("Manager")]
+        public ICollection<Project> ManagedProjects { get; set; } = new List<Project>();
+        // --- END FIX ---
 
         [NotMapped]
         public string FullName => $"{FirstName} {LastName}";

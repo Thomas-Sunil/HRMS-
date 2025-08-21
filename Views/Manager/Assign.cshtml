@@ -1,0 +1,26 @@
+﻿@model IEnumerable<hrms.Models.Employee>
+@{
+    ViewData["Title"] = "Assign Employee"; Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Assign Unassigned Employee</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to Team</a>
+    </div>
+    <table class="table">
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.FullName</td>
+                <td>@item.Position</td>
+                <td>
+                    <form asp-action="Assign" method="post">
+                        <input type="hidden" name="employeeId" value="@item.Id" />
+                        <button type="submit" class="btn btn-sm btn-success">Add to My Team</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </table>
+</div>

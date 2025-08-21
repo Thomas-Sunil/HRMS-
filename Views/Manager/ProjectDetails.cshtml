@@ -1,0 +1,43 @@
+﻿@model hrms.Models.ProjectDetailsViewModel
+@{
+    ViewData["Title"] = "Project Details"; Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <h2>@Model.Project.Name</h2>
+    <p>@Model.Project.Description</p>
+    <hr />
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Assigned Team Members</h4>
+            <ul>
+                @foreach (var member in Model.Project.AssignedEmployees)
+                {
+                    <li class="d-flex justify-content-between align-items-center mb-2">
+                        @member.FullName
+                        <!-- ADD THIS FORM -->
+                        <form asp-action="UnassignFromProject" method="post">
+                            <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                            <input type="hidden" name="employeeId" value="@member.Id" />
+                            <button type="submit" class="btn btn-sm btn-warning">Remove</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="col-md-6">
+            <h4>Assign an Available Employee</h4>
+            <form asp-action="AssignToProject" method="post">
+                <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                <select name="employeeId" class="form-control mb-2">
+                    <option>Select an employee</option>
+                    @foreach (var member in Model.AvailableTeamMembers)
+                    {
+                        <option value="@member.Id">@member.FullName</option>
+                    }
+                </select>
+                <button type="submit" class="btn btn-success">Assign to Project</button>
+            </form>
+        </div>
+    </div>
+</div>

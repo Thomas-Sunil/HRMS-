@@ -1,6 +1,6 @@
 ﻿using hrms.Data;
 using hrms.Models;
-using Microsoft.AspNetCore.Authorization; // <-- Add this
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
@@ -8,141 +8,168 @@ using System.Threading.Tasks;
 
 namespace hrms.Controllers
 {
-    [Authorize(Roles = "manager, hr")] // <-- Secure the whole controller
+    [Authorize(Roles = "manager,hr")]
     public class ManagerController(ApplicationDbContext context) : Controller
     {
         private readonly ApplicationDbContext _context = context;
 
-        // This method now finds the currently authenticated user
         private async Task<Employee> GetCurrentManagerAsync()
         {
-            // HttpContext.User.Identity.Name gets the username from the secure cookie
             var username = HttpContext.User.Identity.Name;
-            if (string.IsNullOrEmpty(username))
-            {
-                return null;
-            }
-
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
             if (user == null) return null;
-
-            return await _context.Employees
-                .Include(e => e.Department)
-                .FirstOrDefaultAsync(e => e.UserId == user.Id);
+            return await _context.Employees.Include(e => e.Department).FirstOrDefaultAsync(e => e.UserId == user.Id);
         }
 
         public async Task<IActionResult> Index()
         {
             var manager = await GetCurrentManagerAsync();
-            if (manager == null) return Content("Could not find an employee profile for the logged-in manager.");
-
-            // Show a different message if manager isn't in a department yet.
-            if (manager.DepartmentId == null)
+            if (manager?.DepartmentId == null)
             {
-                // Create a view model with empty lists to avoid a crash on the view
-                var emptyViewModel = new ManagerDashboardViewModel
-                {
-                    Manager = manager,
-                    TeamMembers = new List<Employee>(), // Empty list
-                    UnassignedEmployees = new List<Employee>() // Empty list
-                };
-                ViewBag.ErrorMessage = "You are not currently assigned to a department. Please contact HR.";
-                return View(emptyViewModel);
+                ViewBag.ErrorMessage = "You are not assigned to a department. Please contact HR.";
+                return View(new List<Employee>()); // Return an empty list to the view
             }
 
-            // The rest of the logic remains the same
             var teamMembers = await _context.Employees
                 .Where(e => e.DepartmentId == manager.DepartmentId)
+                .Include(e => e.Projects)
                 .ToListAsync();
 
-            var unassignedEmployees = await _context.Employees
-                .Where(e => e.DepartmentId == null)
-                .ToListAsync();
-
-            var viewModel = new ManagerDashboardViewModel
-            {
-                Manager = manager,
-                TeamMembers = teamMembers,
-                UnassignedEmployees = unassignedEmployees
-            };
-
-            return View(viewModel);
+            return View(teamMembers);
         }
-        // GET: /Manager/Projects/5 (for a specific employee)
-        public async Task<IActionResult> Projects(int? id)
+
+        public async Task<IActionResult> Assign()
         {
-            if (id == null) return NotFound();
+            var unassignedEmployees = await _context.Employees.Where(e => e.DepartmentId == null).ToListAsync();
+            return View(unassignedEmployees);
+        }
 
-            var employee = await _context.Employees.FindAsync(id);
-            if (employee == null) return NotFound();
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Assign(int employeeId)
+        {
+            var manager = await GetCurrentManagerAsync();
+            var employee = await _context.Employees.FindAsync(employeeId);
+            if (manager?.DepartmentId != null && employee?.DepartmentId == null)
+            {
+                employee.DepartmentId = manager.DepartmentId;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Assign));
+        }
 
+        public async Task<IActionResult> Projects()
+        {
+            var manager = await GetCurrentManagerAsync();
             var projects = await _context.Projects
-                .Where(p => p.EmployeeId == id)
-                .OrderByDescending(p => p.Deadline)
+                .Where(p => p.ManagerId == manager.Id)
+                .Include(p => p.AssignedEmployees)
                 .ToListAsync();
+            return View(projects);
+        }
 
-            var viewModel = new EmployeeProjectsViewModel
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateProject(string projectName, string projectDescription, DateTime? projectDeadline)
+        {
+            var manager = await GetCurrentManagerAsync();
+            var project = new Project
             {
-                Employee = employee,
-                Projects = projects
+                Name = projectName,
+                Description = projectDescription,
+                Deadline = projectDeadline,
+                ManagerId = manager.Id,
+                // --- THIS IS THE FIX ---
+                // We must provide a value for the non-nullable Status field.
+                Status = "Not Started"
             };
-
-            return View(viewModel);
+            _context.Projects.Add(project);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Projects));
         }
 
-        // POST: /Manager/Projects/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Projects(int id, EmployeeProjectsViewModel viewModel)
+        public async Task<IActionResult> ProjectDetails(int id)
         {
-            var employee = await _context.Employees.FindAsync(id);
             var manager = await GetCurrentManagerAsync();
-            if (employee == null || manager == null) return NotFound();
+            var project = await _context.Projects.Include(p => p.AssignedEmployees).FirstOrDefaultAsync(p => p.Id == id);
 
-            if (!string.IsNullOrEmpty(viewModel.NewProjectName))
-            {
-                var newProject = new Project
-                {
-                    Name = viewModel.NewProjectName,
-                    Description = viewModel.NewProjectDescription,
-                    Deadline = viewModel.NewProjectDeadline,
-                    Status = "Assigned",
-                    EmployeeId = employee.Id,
-                    ManagerId = manager.Id
-                };
-                _context.Projects.Add(newProject);
-                await _context.SaveChangesAsync();
-
-                // Redirect back to the same page to see the new project in the list
-                return RedirectToAction(nameof(Projects), new { id = employee.Id });
-            }
-
-            // If model state is invalid, we need to repopulate the view
-            viewModel.Employee = employee;
-            viewModel.Projects = await _context.Projects
-                .Where(p => p.EmployeeId == id)
-                .OrderByDescending(p => p.Deadline)
+            var availableMembers = await _context.Employees
+                .Where(e => e.DepartmentId == manager.DepartmentId && !e.Projects.Any())
                 .ToListAsync();
+
+            var viewModel = new ProjectDetailsViewModel
+            {
+                Project = project,
+                AvailableTeamMembers = availableMembers
+            };
             return View(viewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignToTeam(int employeeId)
+        public async Task<IActionResult> AssignToProject(int projectId, int employeeId)
         {
-            var manager = await GetCurrentManagerAsync();
-            if (manager?.DepartmentId == null) return RedirectToAction(nameof(Index));
-
-            var employeeToAssign = await _context.Employees.FindAsync(employeeId);
-
-            if (employeeToAssign != null && employeeToAssign.DepartmentId == null)
+            var project = await _context.Projects.Include(p => p.AssignedEmployees).FirstOrDefaultAsync(p => p.Id == projectId);
+            var employee = await _context.Employees.FindAsync(employeeId);
+            if (project != null && employee != null)
             {
-                employeeToAssign.DepartmentId = manager.DepartmentId;
-                _context.Update(employeeToAssign);
+                project.AssignedEmployees.Add(employee);
                 await _context.SaveChangesAsync();
             }
+            return RedirectToAction(nameof(ProjectDetails), new { id = projectId });
+        }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnassignFromTeam(int employeeId)
+        {
+            var manager = await GetCurrentManagerAsync();
+            var employee = await _context.Employees.FindAsync(employeeId);
+
+            // You can only unassign someone if they are actually in your department
+            if (manager?.DepartmentId != null && employee?.DepartmentId == manager.DepartmentId)
+            {
+                // Unassign by setting department to null
+                employee.DepartmentId = null;
+                await _context.SaveChangesAsync();
+            }
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteProject(int projectId)
+        {
+            var manager = await GetCurrentManagerAsync();
+            var project = await _context.Projects.FindAsync(projectId);
+
+            // You can only delete projects you own
+            if (project != null && project.ManagerId == manager.Id)
+            {
+                _context.Projects.Remove(project);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Projects));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnassignFromProject(int projectId, int employeeId)
+        {
+            var project = await _context.Projects
+                .Include(p => p.AssignedEmployees)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            var employee = await _context.Employees.FindAsync(employeeId);
+
+            // If both exist and the employee is in the project's assigned list...
+            if (project != null && employee != null && project.AssignedEmployees.Any(e => e.Id == employeeId))
+            {
+                // ...remove them from the collection.
+                project.AssignedEmployees.Remove(employee);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(ProjectDetails), new { id = projectId });
         }
     }
 }

@@ -22,15 +22,16 @@ namespace hrms.Models
         [Column("status")]
         public string Status { get; set; }
 
+        // --- THIS IS THE FIX ---
+        // We add the ForeignKey attribute to be explicit.
         [Column("manager_id")]
         public int? ManagerId { get; set; }
+        [ForeignKey("ManagerId")]
         public Employee Manager { get; set; }
+        // --- END FIX ---
 
-        [Column("employee_id")]
-        public int? EmployeeId { get; set; }
-        public Employee Employee { get; set; }
-
-        public ICollection<ProjectTask> ProjectTasks { get; set; }
-        public PerformanceReview PerformanceReview { get; set; }
+        public ICollection<Employee> AssignedEmployees { get; set; } = new List<Employee>();
+        public ICollection<ProjectTask> ProjectTasks { get; set; } = new List<ProjectTask>();
+        public ICollection<PerformanceReview> PerformanceReviews { get; set; } = new List<PerformanceReview>();
     }
 }

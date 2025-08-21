@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Manager Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
+    <!-- We will use the same professional style as the HR layout -->
+    <link rel="stylesheet" href="~/css/hr-style.css" />
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="fas fa-user-tie"></i> Manager Portal</h3>
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Manager" asp-action="Index"><i class="fas fa-users"></i> My Team</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Manager" asp-action="Assign"><i class="fas fa-user-plus"></i> Assign Employees</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Manager" asp-action="Projects"><i class="fas fa-tasks"></i> Manage Projects</a>
+            </li>
+            <li class="nav-item mt-auto">
+                <!-- This needs a form to work with our [HttpPost] Logout action -->
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="nav-link text-start w-100 btn btn-link">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <main role="main" class="container-fluid p-4">
+            @RenderBody()
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
