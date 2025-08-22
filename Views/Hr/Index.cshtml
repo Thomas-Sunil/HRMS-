@@ -18,55 +18,67 @@
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
+                            <!-- Corrected Header Row -->
                             <th>First Name</th>
                             <th>Last Name</th>
                             <th>Department</th>
+                            <th>Position</th>
                             <th>Project Status</th>
+                            <th>Email</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var employee in Model)
+                        @if (Model != null && Model.Any())
                         {
-                            <tr>
-                                <td>@employee.FirstName @employee.LastName</td>
-                                <td>@employee.Department?.Name ?? "N/A"</td>
-                                <td>@employee.Position</td>
-                                <td>
-                                    @if (employee.Projects.Any())
-                                    {
-                                        <span class="badge bg-success">Assigned</span>
-                                    }
-                                    else
-                                    {
+                            @foreach (var employee in Model)
+                            {
+                                <tr>
+                                    <!-- Corrected Body Row Cells -->
+                                    <td>@employee.FirstName</td>
+                                    <td>@employee.LastName</td>
+                                    <td>@(employee.Department?.Name ?? "N/A")</td>
+                                    <td>@employee.Position</td>
+                                    <td>
+                                        @if (employee.Projects.Any())
+                                        {
+                                            <span class="badge bg-success">Assigned</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Available</span>
+                                        }
+                                    </td>
+                                    <td>@employee.Email</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-info"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#attendanceModal"
+                                                data-employee-id="@employee.Id"
+                                                data-employee-name="@employee.FullName"
+                                                title="View Attendance">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
 
-                                        <span class="badge bg-secondary">Available</span>
-                                    }
-                                </td>
-                                <td>
-                                    <!-- THE NEW "VIEW ATTENDANCE" BUTTON -->
-                                    <button type="button" class="btn btn-sm btn-outline-info"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#attendanceModal"
-                                            data-employee-id="@employee.Id"
-                                            data-employee-name="@employee.FullName">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </button>
+                                        <a asp-action="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-secondary" title="Edit Employee"><i class="fas fa-edit"></i></a>
 
-                                    <a asp-action="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-secondary" title="Edit Employee"><i class="fas fa-edit"></i></a>
-
-                                    @if (employee.DepartmentId != null)
-                                    {
-                                        <form asp-action="UnassignFromDepartment" method="post" class="d-inline">
-                                            <input type="hidden" name="employeeId" value="@employee.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Unassign from Department">
-                                                <i class="fas fa-unlink"></i>
-                                            </button>
-                                        </form>
-                                    }
-                                    <a href="#" class="btn btn-sm btn-outline-danger" title="Delete Employee"><i class="fas fa-trash"></i></a>
-                                </td>
-                            </tr>
+                                        @if (employee.DepartmentId != null)
+                                        {
+                                            <form asp-action="UnassignFromDepartment" method="post" class="d-inline">
+                                                <input type="hidden" name="employeeId" value="@employee.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Unassign from Department">
+                                                    <i class="fas fa-unlink"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <a href="#" class="btn btn-sm btn-outline-danger" title="Delete Employee"><i class="fas fa-trash"></i></a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="7" class="text-center">No employees found.</td></tr>
                         }
                     </tbody>
                 </table>
