@@ -152,5 +152,143 @@ namespace hrms.Controllers
             var departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
             ViewBag.Departments = new SelectList(departments, "Id", "Name", selectedDepartment);
         }
+        public IActionResult CompanyAttendance()
+        {
+            // This action just returns the view. The calendar fetches data itself.
+            return View();
+        }
+
+        // GET: /Hr/GetCompanyAttendanceData
+        [HttpGet]
+        public async Task<IActionResult> GetCompanyAttendanceData(DateTime start, DateTime end)
+        {
+            var events = new List<object>();
+
+            // 1. Get ALL employees, because HR can see everyone.
+            var allEmployees = await _context.Employees.ToListAsync();
+            var allEmployeeIds = allEmployees.Select(e => e.Id).ToList();
+
+            if (!allEmployeeIds.Any())
+            {
+                return Json(new List<object>()); // Return empty if no employees exist
+            }
+
+            // 2. Fetch all attendance and leave records in the requested date range
+            var attendances = await _context.Attendances
+                .Where(a => allEmployeeIds.Contains(a.EmployeeId) && a.Date >= start && a.Date <= end)
+                .Include(a => a.Employee) // Must include Employee to get the FullName
+                .ToListAsync();
+
+            var leaveRequests = await _context.LeaveRequests
+                .Where(lr => allEmployeeIds.Contains(lr.EmployeeId)
+                             && lr.Status.Contains("Approved")
+                             && lr.StartDate.Date <= end.Date
+                             && lr.EndDate.Date >= start.Date)
+                .ToListAsync();
+
+            // 3. Loop through all employees and all days to generate Absent/On Leave events
+            foreach (var employee in allEmployees)
+            {
+                for (var day = start.Date; day.Date <= end.Date; day = day.AddDays(1))
+                {
+                    // Basic validation
+                    if (day < employee.DateOfJoining.Date || day > DateTime.Today || day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
+                    {
+                        continue;
+                    }
+
+                    bool hasAttended = attendances.Any(a => a.EmployeeId == employee.Id && a.Date == day);
+                    if (hasAttended) continue; // Skip if a "Present" record exists
+
+                    bool onLeave = leaveRequests.Any(lr => lr.EmployeeId == employee.Id && day >= lr.StartDate.Date && day <= lr.EndDate.Date);
+
+                    if (onLeave)
+                    {
+                        events.Add(new
+                        {
+                            title = $"{employee.FullName} - On Leave",
+                            start = day.ToString("yyyy-MM-dd"),
+                            backgroundColor = "#ffc107", // Yellow
+                            borderColor = "#ffc107"
+                        });
+                    }
+                    else
+                    {
+                        // If no attendance and no leave, employee was absent
+                        events.Add(new
+                        {
+                            title = $"{employee.FullName} - Absent",
+                            start = day.ToString("yyyy-MM-dd"),
+                            backgroundColor = "#dc3545", // Red
+                            borderColor = "#dc3545"
+                        });
+                    }
+                }
+            }
+
+            // 4. Add all the "Present" events from the records we fetched
+            events.AddRange(attendances.Select(a => new {
+                title = $"{a.Employee.FullName} - Present",
+                start = a.Date.ToString("yyyy-MM-dd"),
+                backgroundColor = "#0d6efd", // Blue
+                borderColor = "#0d6efd"
+            }));
+
+            return Json(events);
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetEmployeeAttendanceData(int employeeId, DateTime start, DateTime end)
+        {
+            // Find the specific employee requested
+            var employee = await _context.Employees.FindAsync(employeeId);
+            if (employee == null) return Unauthorized();
+
+            var events = new List<object>();
+
+            // Fetch actual attendance and approved leave records
+            var attendances = await _context.Attendances
+                .Where(a => a.EmployeeId == employeeId && a.Date >= start && a.Date <= end)
+                .ToDictionaryAsync(a => a.Date);
+
+            var leaveRequests = await _context.LeaveRequests
+                .Where(lr => lr.EmployeeId == employeeId && lr.Status.Contains("Approved") &&
+                             lr.StartDate <= end && lr.EndDate >= start)
+                .ToListAsync();
+
+            // Loop through all relevant days to generate events
+            for (var day = start.Date; day.Date <= end.Date; day = day.AddDays(1))
+            {
+                if (day < employee.DateOfJoining.Date || day > DateTime.Today || day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    continue;
+                }
+
+                if (attendances.ContainsKey(day))
+                {
+                    // "Present" event is already handled below
+                    continue;
+                }
+
+                if (leaveRequests.Any(lr => day >= lr.StartDate.Date && day <= lr.EndDate.Date))
+                {
+                    events.Add(new { title = "On Leave", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#ffc107", borderColor = "#ffc107" });
+                }
+                else
+                {
+                    events.Add(new { title = "Absent", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#dc3545", borderColor = "#dc3545" });
+                }
+            }
+
+            // Add the "Present" events
+            events.AddRange(attendances.Values.Select(a => new {
+                title = a.Status, // "Present"
+                start = a.Date.ToString("yyyy-MM-dd"),
+                backgroundColor = "#198754", // Green
+                borderColor = "#198754"
+            }));
+
+            return Json(events);
+        }
     }
 }
+    

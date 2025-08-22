@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "My Team";
-    Layout = "~/Views/Shared/_ManagerLayout.cshtml"; // This is the corrected line
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
 }
 
 <div class="container-fluid">
@@ -11,7 +11,9 @@
         <div>
             @if (ViewBag.ErrorMessage != null)
             {
-                <div class="alert alert-warning d-inline-block me-3">@ViewBag.ErrorMessage</div>
+                <div class="alert alert-warning d-inline-block p-2 me-3" role="alert">
+                    @ViewBag.ErrorMessage
+                </div>
             }
             <a asp-action="Projects" class="btn btn-primary">Manage Projects</a>
             <a asp-action="Assign" class="btn btn-success"><i class="fas fa-plus"></i> Assign New Employee</a>
@@ -44,7 +46,14 @@
                             }
                         </td>
                         <td>
-                            <a asp-action="Projects" asp-route-id="@member.Id" class="btn btn-sm btn-outline-primary">View/Add Projects</a>
+                            <button type="button" class="btn btn-sm btn-outline-info view-attendance-btn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#attendanceModal"
+                                    data-employee-id="@member.Id"
+                                    data-employee-name="@member.FullName">
+                                View Attendance
+                            </button>
+                            <a asp-action="Projects" asp-route-id="@member.Id" class="btn btn-sm btn-outline-primary">Projects</a>
                             <form asp-action="UnassignFromTeam" method="post" class="d-inline">
                                 <input type="hidden" name="employeeId" value="@member.Id" />
                                 <button type="submit" class="btn btn-sm btn-outline-warning">Unassign</button>
@@ -56,3 +65,71 @@
         </table>
     </div>
 </div>
+
+<!-- Bootstrap Modal for the Calendar -->
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalLabel">Attendance Calendar for...</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>            
+
+@section Scripts {
+                                <script>
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        var calendarEl = document.getElementById('modal-calendar');
+                                        var modalTitleEl = document.getElementById('attendanceModalLabel');
+                                        var calendar; // Declare calendar object to hold the instance
+
+                                        var attendanceModal = document.getElementById('attendanceModal');
+
+                                        // This is the variable that will hold the event data URL
+                                        var eventSourceUrl = '';
+
+                                        // EVENT 1: 'show.bs.modal' - Fires when the modal is about to be shown.
+                                        // We use this to PREPARE the data, not to render.
+                                        attendanceModal.addEventListener('show.bs.modal', function (event) {
+                                            var button = event.relatedTarget;
+                                            var employeeId = button.getAttribute('data-employee-id');
+                                            var employeeName = button.getAttribute('data-employee-name');
+
+                                            // Update the title
+                                            modalTitleEl.textContent = 'Attendance Calendar for ' + employeeName;
+
+                                            // Set the URL that the calendar will use to fetch data
+                                            eventSourceUrl = `/Manager/GetTeamAttendanceData?employeeId=${employeeId}`;
+
+                                            // If a calendar already exists, destroy it to clear old data
+                                            if(calendar) {
+                                                calendar.destroy();
+                                            }
+                                        });
+
+                                        // ---- THIS IS THE FIX ----
+                                        // EVENT 2: 'shown.bs.modal' - Fires AFTER the modal is fully visible.
+                                        // We render the calendar here, now that the container is ready.
+                                        attendanceModal.addEventListener('shown.bs.modal', function () {
+                                            calendar = new FullCalendar.Calendar(calendarEl, {
+                                                initialView: 'dayGridMonth',
+                                                headerToolbar: {
+                                                    left: 'prev,next today',
+                                                    center: 'title',
+                                                    right: 'dayGridMonth'
+                                                },
+                                                // The events property now just reads our prepared URL variable
+                                                events: eventSourceUrl
+                                            });
+
+                                            calendar.render();
+                                        });
+                                        // ---- END FIX ----
+                                    });
+    </script>
+}

@@ -6,16 +6,7 @@
 }
 
 <div class="container-fluid">
-    <h2 class="mb-4">Dashboard Overview</h2>
-    <div class="row">
-        <div class="col-md-3">
-            <div class="dashboard-card">
-                <div class="card-icon"><i class="fas fa-users"></i></div>
-                <h5>Total Employees</h5>
-                <h2 class="card-title">@ViewBag.TotalEmployees</h2>
-            </div>
-        </div>
-    </div>
+    <!-- ... (Dashboard Stats Cards are the same) ... -->
 
     <div class="row mt-4">
         <div class="col-12">
@@ -30,52 +21,52 @@
                             <th>First Name</th>
                             <th>Last Name</th>
                             <th>Department</th>
-                            <th>Position</th>
                             <th>Project Status</th>
-                            <th>Email</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model != null && Model.Any())
+                        @foreach (var employee in Model)
                         {
-                            @foreach (var employee in Model)
-                            {
-                                <tr>
-                                    <td>@employee.FirstName</td>
-                                    <td>@employee.LastName</td>
-                                    <td>@(employee.Department?.Name ?? "N/A")</td>
-                                    <td>@employee.Position</td>
-                                    <td>
-                                        @if (employee.Projects.Any())
-                                        {
-                                            <span class="badge bg-success">Assigned</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-secondary">Available</span>
-                                        }
-                                    </td>
-                                    <td>@employee.Email</td>
-                                    <td>
-                                        <a asp-action="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-secondary" title="Edit Employee"><i class="fas fa-edit"></i></a>
-                                        @if (employee.DepartmentId != null)
-                                        {
-                                            <form asp-action="UnassignFromDepartment" method="post" class="d-inline">
-                                                <input type="hidden" name="employeeId" value="@employee.Id" />
-                                                <button type="submit" class="btn btn-sm btn-outline-warning" title="Unassign from Department">
-                                                    <i class="fas fa-unlink"></i>
-                                                </button>
-                                            </form>
-                                        }
-                                        <a href="#" class="btn btn-sm btn-outline-danger" title="Delete Employee"><i class="fas fa-trash"></i></a>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr><td colspan="7" class="text-center">No employees found.</td></tr>
+                            <tr>
+                                <td>@employee.FirstName @employee.LastName</td>
+                                <td>@employee.Department?.Name ?? "N/A"</td>
+                                <td>@employee.Position</td>
+                                <td>
+                                    @if (employee.Projects.Any())
+                                    {
+                                        <span class="badge bg-success">Assigned</span>
+                                    }
+                                    else
+                                    {
+
+                                        <span class="badge bg-secondary">Available</span>
+                                    }
+                                </td>
+                                <td>
+                                    <!-- THE NEW "VIEW ATTENDANCE" BUTTON -->
+                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#attendanceModal"
+                                            data-employee-id="@employee.Id"
+                                            data-employee-name="@employee.FullName">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </button>
+
+                                    <a asp-action="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-secondary" title="Edit Employee"><i class="fas fa-edit"></i></a>
+
+                                    @if (employee.DepartmentId != null)
+                                    {
+                                        <form asp-action="UnassignFromDepartment" method="post" class="d-inline">
+                                            <input type="hidden" name="employeeId" value="@employee.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-warning" title="Unassign from Department">
+                                                <i class="fas fa-unlink"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    <a href="#" class="btn btn-sm btn-outline-danger" title="Delete Employee"><i class="fas fa-trash"></i></a>
+                                </td>
+                            </tr>
                         }
                     </tbody>
                 </table>
@@ -83,3 +74,58 @@
         </div>
     </div>
 </div>
+
+
+<!-- BOOTSTRAP MODAL FOR THE CALENDAR -->
+<div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceModalLabel">Attendance Calendar for...</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('modal-calendar');
+            var modalTitleEl = document.getElementById('attendanceModalLabel');
+            var calendar;
+
+            var attendanceModal = document.getElementById('attendanceModal');
+
+            // This event fires AFTER the modal is fully visible
+            attendanceModal.addEventListener('shown.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var employeeId = button.getAttribute('data-employee-id');
+                var employeeName = button.getAttribute('data-employee-name');
+
+                modalTitleEl.textContent = 'Attendance Calendar for ' + employeeName;
+
+                if(calendar) {
+                    calendar.destroy();
+                }
+
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth'
+                    },
+                    // Use the NEW HrController action URL
+                    events: `/Hr/GetEmployeeAttendanceData?employeeId=${employeeId}`
+                });
+
+                calendar.render();
+            });
+        });
+    </script>
+}

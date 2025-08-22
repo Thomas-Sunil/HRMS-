@@ -6,8 +6,10 @@
     <title>@ViewData["Title"] - Manager Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
-    <!-- This layout uses the same professional styles as the HR dashboard -->
     <link rel="stylesheet" href="~/css/hr-style.css" />
+
+    <!-- FullCalendar CSS for the attendance modal -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.css' rel='stylesheet' />
 </head>
 <body>
 
@@ -25,6 +27,9 @@
             <li class="nav-item">
                 <a class="nav-link" asp-controller="Manager" asp-action="Projects"><i class="fas fa-tasks"></i> Manage Projects</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Employee" asp-action="MyAttendance"><i class="fas fa-calendar-alt"></i> My Attendance</a>
+            </li>
             <li class="nav-item mt-auto">
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     <button type="submit" class="nav-link text-start w-100 btn btn-link">
@@ -36,20 +41,15 @@
     </div>
 
     <div class="main-content">
-        <!-- ---- THIS HEADER WAS MISSING AND IS NOW CORRECTED ---- -->
         <header class="top-header">
             <div class="d-flex justify-content-between align-items-center w-100">
-
-                <!-- The intelligent Attendance View Component -->
                 @await Component.InvokeAsync("Attendance")
-
                 <div class="user-profile">
                     <i class="fas fa-user-circle"></i>
                     <span>@User.Identity.Name</span>
                 </div>
             </div>
         </header>
-        <!-- ---- END CORRECTION ---- -->
 
         <main role="main" class="container-fluid p-4">
             @RenderBody()
@@ -57,7 +57,13 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- This Bootstrap Bundle script includes Popper.js and is required for modals -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+
+    <!-- FullCalendar JavaScript for the attendance modal -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.0/main.min.js'></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

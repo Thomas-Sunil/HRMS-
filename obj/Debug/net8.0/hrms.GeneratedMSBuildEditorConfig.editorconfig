@@ -40,6 +40,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/THOMAS/Desktop/hrms/hrms/Views/Employee/MyAttendance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRW1wbG95ZWVcTXlBdHRlbmRhbmNlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -50,6 +54,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Hr/Add.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSHJcQWRkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/THOMAS/Desktop/hrms/hrms/Views/Hr/CompanyAttendance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSHJcQ29tcGFueUF0dGVuZGFuY2UuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Hr/Edit.cshtml]
@@ -74,6 +82,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Manager/Projects.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclxQcm9qZWN0cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/THOMAS/Desktop/hrms/hrms/Views/Manager/TeamAttendance.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclxUZWFtQXR0ZW5kYW5jZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Shared/Components/Attendance/Default.cshtml]
