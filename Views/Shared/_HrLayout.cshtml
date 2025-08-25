@@ -26,6 +26,10 @@
             <li class="nav-item">
                 <a class="nav-link" asp-controller="Employee" asp-action="MyAttendance"><i class="fas fa-calendar-alt"></i> My Attendance</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Leave" asp-action="Apply"><i class="fas fa-plane-departure"></i> Apply for Leave</a>
+            </li>
+            <li class="nav-item"> <a class="nav-link" asp-controller="Hr" asp-action="LeaveApprovals"><i class="fas fa-check-double"></i> Leave Management</a> </li>
             <li class="nav-item mt-auto">
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     <button type="submit" class="nav-link text-start w-100 btn btn-link">

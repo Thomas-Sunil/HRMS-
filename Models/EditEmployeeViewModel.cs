@@ -2,6 +2,7 @@
 
 namespace hrms.Models
 {
+    // This ViewModel is for the Edit Employee form
     public class EditEmployeeViewModel
     {
         public int Id { get; set; }
@@ -19,12 +20,16 @@ namespace hrms.Models
         public string Email { get; set; }
 
         [Display(Name = "Phone Number")]
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
         [Display(Name = "Department")]
         public int? DepartmentId { get; set; }
 
         [Required]
         public string Position { get; set; }
+
+        // This is the property that was missing
+        [Display(Name = "Reporting HR")]
+        public int? ReportingHrId { get; set; }
     }
 }

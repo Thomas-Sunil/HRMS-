@@ -68,12 +68,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSHJcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Users/THOMAS/Desktop/hrms/hrms/Views/Hr/LeaveApprovals.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSHJcTGVhdmVBcHByb3ZhbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/THOMAS/Desktop/hrms/hrms/Views/Leave/Apply.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGVhdmVcQXBwbHkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Manager/Assign.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclxBc3NpZ24uY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Manager/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/THOMAS/Desktop/hrms/hrms/Views/Manager/LeaveApprovals.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWFuYWdlclxMZWF2ZUFwcHJvdmFscy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Users/THOMAS/Desktop/hrms/hrms/Views/Manager/ProjectDetails.cshtml]

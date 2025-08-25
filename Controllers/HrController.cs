@@ -9,33 +9,33 @@ using System.Threading.Tasks;
 
 namespace hrms.Controllers
 {
-    // You can add [Authorize(Roles="hr")] here to protect the whole controller
     public class HrController(ApplicationDbContext context) : Controller
     {
         private readonly ApplicationDbContext _context = context;
 
+        // --- UNCHANGED METHODS ---
         public async Task<IActionResult> Index()
         {
             ViewBag.TotalEmployees = await _context.Employees.CountAsync();
             var employees = await _context.Employees
                 .Include(e => e.Department)
-                .Include(e => e.Projects) // Include project data for status display
+                .Include(e => e.Projects)
                 .ToListAsync();
             return View(employees);
         }
 
-        public async Task<IActionResult> Add()
+        public IActionResult Add()
         {
             return View();
         }
 
+        // --- UPDATED METHODS ---
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Add(AddEmployeeViewModel model)
         {
             if (ModelState.IsValid)
             {
-                // Username and email checks
                 if (await _context.Users.AnyAsync(u => u.Username.ToLower() == model.Username.ToLower()))
                 {
                     ModelState.AddModelError("Username", "This username is already taken.");
@@ -47,7 +47,6 @@ namespace hrms.Controllers
                     return View(model);
                 }
 
-                // Transaction to create user and employee
                 await using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
@@ -69,6 +68,7 @@ namespace hrms.Controllers
                         Position = model.Position,
                         DateOfJoining = model.DateOfJoining,
                         UserId = newUser.Id
+                        // DepartmentId and ReportingHrId are intentionally null on creation
                     };
                     _context.Employees.Add(newEmployee);
                     await _context.SaveChangesAsync();
@@ -76,15 +76,16 @@ namespace hrms.Controllers
                     await transaction.CommitAsync();
                     return RedirectToAction(nameof(Index));
                 }
-                catch (Exception ex)
+                catch (Exception) // No need to use 'ex' if you are not logging it
                 {
                     await transaction.RollbackAsync();
-                    ModelState.AddModelError("", $"An unexpected error occurred: {ex.Message}");
+                    ModelState.AddModelError("", "An unexpected error occurred while creating the employee.");
                 }
             }
             return View(model);
         }
 
+        // GET Edit - Fully Implemented
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -99,13 +100,15 @@ namespace hrms.Controllers
                 Email = employee.Email,
                 PhoneNumber = employee.PhoneNumber,
                 DepartmentId = employee.DepartmentId,
-                Position = employee.Position
+                Position = employee.Position,
+                ReportingHrId = employee.ReportingHrId
             };
 
-            await PopulateDepartmentsViewBag(employee.DepartmentId);
+            await PopulateEditDropdowns(employee.DepartmentId, employee.ReportingHrId);
             return View(viewModel);
         }
 
+        // POST Edit - Fully Implemented
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditEmployeeViewModel viewModel)
@@ -123,17 +126,17 @@ namespace hrms.Controllers
                 employeeToUpdate.PhoneNumber = viewModel.PhoneNumber;
                 employeeToUpdate.DepartmentId = viewModel.DepartmentId;
                 employeeToUpdate.Position = viewModel.Position;
+                employeeToUpdate.ReportingHrId = viewModel.ReportingHrId;
 
-                _context.Update(employeeToUpdate);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
 
-            await PopulateDepartmentsViewBag(viewModel.DepartmentId);
+            await PopulateEditDropdowns(viewModel.DepartmentId, viewModel.ReportingHrId);
             return View(viewModel);
         }
 
-        // This new action handles unassigning an employee from a department.
+        // Unassign Action - Fully Implemented
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UnassignFromDepartment(int employeeId)
@@ -146,149 +149,67 @@ namespace hrms.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
-
-        private async Task PopulateDepartmentsViewBag(object selectedDepartment = null)
+        public async Task<IActionResult> LeaveApprovals()
         {
-            var departments = await _context.Departments.OrderBy(d => d.Name).ToListAsync();
-            ViewBag.Departments = new SelectList(departments, "Id", "Name", selectedDepartment);
-        }
-        public IActionResult CompanyAttendance()
-        {
-            // This action just returns the view. The calendar fetches data itself.
-            return View();
-        }
+            var hrUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == HttpContext.User.Identity.Name.ToLower());
 
-        // GET: /Hr/GetCompanyAttendanceData
-        [HttpGet]
-        public async Task<IActionResult> GetCompanyAttendanceData(DateTime start, DateTime end)
-        {
-            var events = new List<object>();
+            // Don't show the HR's own leave requests on their approval dashboard
+            var hrEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == hrUser.Id);
 
-            // 1. Get ALL employees, because HR can see everyone.
-            var allEmployees = await _context.Employees.ToListAsync();
-            var allEmployeeIds = allEmployees.Select(e => e.Id).ToList();
-
-            if (!allEmployeeIds.Any())
-            {
-                return Json(new List<object>()); // Return empty if no employees exist
-            }
-
-            // 2. Fetch all attendance and leave records in the requested date range
-            var attendances = await _context.Attendances
-                .Where(a => allEmployeeIds.Contains(a.EmployeeId) && a.Date >= start && a.Date <= end)
-                .Include(a => a.Employee) // Must include Employee to get the FullName
+            var requests = await _context.LeaveRequests
+                .Include(lr => lr.Employee).ThenInclude(e => e.Department)
+                .Where(lr => lr.EmployeeId != hrEmployee.Id &&
+                               (lr.Status == "Pending HR Approval" || lr.Status == "Pending Manager Approval"))
+                .OrderByDescending(lr => lr.RequestDate)
                 .ToListAsync();
 
-            var leaveRequests = await _context.LeaveRequests
-                .Where(lr => allEmployeeIds.Contains(lr.EmployeeId)
-                             && lr.Status.Contains("Approved")
-                             && lr.StartDate.Date <= end.Date
-                             && lr.EndDate.Date >= start.Date)
-                .ToListAsync();
-
-            // 3. Loop through all employees and all days to generate Absent/On Leave events
-            foreach (var employee in allEmployees)
-            {
-                for (var day = start.Date; day.Date <= end.Date; day = day.AddDays(1))
-                {
-                    // Basic validation
-                    if (day < employee.DateOfJoining.Date || day > DateTime.Today || day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
-                    {
-                        continue;
-                    }
-
-                    bool hasAttended = attendances.Any(a => a.EmployeeId == employee.Id && a.Date == day);
-                    if (hasAttended) continue; // Skip if a "Present" record exists
-
-                    bool onLeave = leaveRequests.Any(lr => lr.EmployeeId == employee.Id && day >= lr.StartDate.Date && day <= lr.EndDate.Date);
-
-                    if (onLeave)
-                    {
-                        events.Add(new
-                        {
-                            title = $"{employee.FullName} - On Leave",
-                            start = day.ToString("yyyy-MM-dd"),
-                            backgroundColor = "#ffc107", // Yellow
-                            borderColor = "#ffc107"
-                        });
-                    }
-                    else
-                    {
-                        // If no attendance and no leave, employee was absent
-                        events.Add(new
-                        {
-                            title = $"{employee.FullName} - Absent",
-                            start = day.ToString("yyyy-MM-dd"),
-                            backgroundColor = "#dc3545", // Red
-                            borderColor = "#dc3545"
-                        });
-                    }
-                }
-            }
-
-            // 4. Add all the "Present" events from the records we fetched
-            events.AddRange(attendances.Select(a => new {
-                title = $"{a.Employee.FullName} - Present",
-                start = a.Date.ToString("yyyy-MM-dd"),
-                backgroundColor = "#0d6efd", // Blue
-                borderColor = "#0d6efd"
-            }));
-
-            return Json(events);
+            return View(requests);
         }
-        [HttpGet]
-        public async Task<IActionResult> GetEmployeeAttendanceData(int employeeId, DateTime start, DateTime end)
+
+        // POST: /Hr/ApproveLeave/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveLeave(int id)
         {
-            // Find the specific employee requested
-            var employee = await _context.Employees.FindAsync(employeeId);
-            if (employee == null) return Unauthorized();
+            var hrEmployee = await _context.Employees
+                .FirstOrDefaultAsync(e => e.User.Username.ToLower() == HttpContext.User.Identity.Name.ToLower());
 
-            var events = new List<object>();
-
-            // Fetch actual attendance and approved leave records
-            var attendances = await _context.Attendances
-                .Where(a => a.EmployeeId == employeeId && a.Date >= start && a.Date <= end)
-                .ToDictionaryAsync(a => a.Date);
-
-            var leaveRequests = await _context.LeaveRequests
-                .Where(lr => lr.EmployeeId == employeeId && lr.Status.Contains("Approved") &&
-                             lr.StartDate <= end && lr.EndDate >= start)
-                .ToListAsync();
-
-            // Loop through all relevant days to generate events
-            for (var day = start.Date; day.Date <= end.Date; day = day.AddDays(1))
+            var leaveRequest = await _context.LeaveRequests.FindAsync(id);
+            if (leaveRequest != null)
             {
-                if (day < employee.DateOfJoining.Date || day > DateTime.Today || day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
-                {
-                    continue;
-                }
-
-                if (attendances.ContainsKey(day))
-                {
-                    // "Present" event is already handled below
-                    continue;
-                }
-
-                if (leaveRequests.Any(lr => day >= lr.StartDate.Date && day <= lr.EndDate.Date))
-                {
-                    events.Add(new { title = "On Leave", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#ffc107", borderColor = "#ffc107" });
-                }
-                else
-                {
-                    events.Add(new { title = "Absent", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#dc3545", borderColor = "#dc3545" });
-                }
+                leaveRequest.Status = "HR Approved";
+                leaveRequest.HrApprovedById = hrEmployee.Id;
+                _context.Update(leaveRequest);
+                await _context.SaveChangesAsync();
             }
+            return RedirectToAction(nameof(LeaveApprovals));
+        }
 
-            // Add the "Present" events
-            events.AddRange(attendances.Values.Select(a => new {
-                title = a.Status, // "Present"
-                start = a.Date.ToString("yyyy-MM-dd"),
-                backgroundColor = "#198754", // Green
-                borderColor = "#198754"
-            }));
+        // POST: /Hr/RejectLeave/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectLeave(int id)
+        {
+            var hrEmployee = await _context.Employees
+                .FirstOrDefaultAsync(e => e.User.Username.ToLower() == HttpContext.User.Identity.Name.ToLower());
 
-            return Json(events);
+            var leaveRequest = await _context.LeaveRequests.FindAsync(id);
+            if (leaveRequest != null)
+            {
+                leaveRequest.Status = "HR Rejected";
+                leaveRequest.HrApprovedById = hrEmployee.Id;
+                _context.Update(leaveRequest);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(LeaveApprovals));
+        }
+
+        // Renamed Helper for Edit Form
+        private async Task PopulateEditDropdowns(object selectedDept = null, object selectedHr = null)
+        {
+            ViewBag.Departments = new SelectList(await _context.Departments.OrderBy(d => d.Name).ToListAsync(), "Id", "Name", selectedDept);
+            ViewBag.Hrs = new SelectList(await _context.Employees.Include(e => e.User).Where(e => e.User.Role == "hr").OrderBy(e => e.FirstName).ToListAsync(), "Id", "FullName", selectedHr);
         }
     }
 }
-    

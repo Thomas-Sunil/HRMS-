@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace hrms.Models
@@ -19,25 +20,28 @@ namespace hrms.Models
         public string Email { get; set; }
 
         [Column("phone_number")]
-        public string PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
         [Column("department_id")]
         public int? DepartmentId { get; set; }
-        public Department Department { get; set; }
+        public Department? Department { get; set; }
 
         [Column("position")]
         public string Position { get; set; }
 
         [Column("date_of_joining")]
-        public System.DateTime DateOfJoining { get; set; }
+        public DateTime DateOfJoining { get; set; }
 
         [Column("user_id")]
         public int UserId { get; set; }
         public User User { get; set; }
 
-        // This MUST be initialized to prevent null reference issues.
-        public ICollection<Project> Projects { get; set; } = new List<Project>();
+        [Column("reporting_hr_id")]
+        public int? ReportingHrId { get; set; }
+        [ForeignKey("ReportingHrId")]
+        public Employee? ReportingHr { get; set; }
 
+        public ICollection<Project> Projects { get; set; } = new List<Project>();
         [InverseProperty("Manager")]
         public ICollection<Project> ManagedProjects { get; set; } = new List<Project>();
 

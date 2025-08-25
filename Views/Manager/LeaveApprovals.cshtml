@@ -1,0 +1,49 @@
+﻿@model IEnumerable<hrms.Models.LeaveRequest>
+
+@{
+    ViewData["Title"] = "Leave Approvals";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <h2>Pending Leave Approvals for Your Team</h2>
+
+    <div class="table-container mt-4">
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Employee</th>
+                    <th>Leave Type</th>
+                    <th>Dates Requested</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var request in Model)
+                {
+                    <tr>
+                        <td>@request.Employee.FullName</td>
+                        <td>@request.LeaveType</td>
+                        <td>@request.StartDate.ToString("d") - @request.EndDate.ToString("d")</td>
+                        <td>@request.Reason</td>
+                        <td>
+                            <div class="d-flex">
+                                <form asp-action="ApproveLeave" asp-route-id="@request.Id" method="post" class="me-2">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form asp-action="RejectLeave" asp-route-id="@request.Id" method="post">
+                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center">No pending leave requests for your team.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
