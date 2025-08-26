@@ -204,12 +204,99 @@ namespace hrms.Controllers
             }
             return RedirectToAction(nameof(LeaveApprovals));
         }
+        [HttpGet]
+        public async Task<IActionResult> GetEmployeeAttendanceData(int employeeId, DateTime start, DateTime end)
+        {
+            var employee = await _context.Employees.FindAsync(employeeId);
+            if (employee == null)
+            {
+                // If the employee isn't found, return an empty list
+                return Json(new List<object>());
+            }
+
+            var events = new List<object>();
+
+            // Fetch actual attendance and approved leave records for the specific employee
+            var attendances = await _context.Attendances
+                .Where(a => a.EmployeeId == employeeId && a.Date >= start && a.Date <= end)
+                .ToDictionaryAsync(a => a.Date);
+
+            var leaveRequests = await _context.LeaveRequests
+                .Where(lr => lr.EmployeeId == employeeId && lr.Status.Contains("Approved") &&
+                             lr.StartDate <= end && lr.EndDate >= start)
+                .ToListAsync();
+
+            // Loop through all relevant days to generate Absent/On Leave events
+            for (var day = start.Date; day.Date <= end.Date; day = day.AddDays(1))
+            {
+                // Basic workday validation
+                if (day < employee.DateOfJoining.Date || day > DateTime.Today || day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    continue;
+                }
+
+                // If an attendance record exists for this day, we've already handled it.
+                if (attendances.ContainsKey(day))
+                {
+                    continue;
+                }
+
+                // Check if the user was on approved leave for this day
+                if (leaveRequests.Any(lr => day.Date >= lr.StartDate.Date && day.Date <= lr.EndDate.Date))
+                {
+                    events.Add(new
+                    {
+                        title = "On Leave",
+                        start = day.ToString("yyyy-MM-dd"),
+                        backgroundColor = "#ffc107", // Yellow
+                        borderColor = "#ffc107"
+                    });
+                }
+                else
+                {
+                    // If no attendance and no leave, the employee was absent
+                    events.Add(new
+                    {
+                        title = "Absent",
+                        start = day.ToString("yyyy-MM-dd"),
+                        backgroundColor = "#dc3545", // Red
+                        borderColor = "#dc3545"
+                    });
+                }
+            }
+
+            // Now, add the "Present" events from the records we fetched earlier
+            events.AddRange(attendances.Values.Select(a => new {
+                title = a.Status, // Should be "Present"
+                start = a.Date.ToString("yyyy-MM-dd"),
+                backgroundColor = "#198754", // Green
+                borderColor = "#198754"
+            }));
+
+            return Json(events);
+        }
 
         // Renamed Helper for Edit Form
         private async Task PopulateEditDropdowns(object selectedDept = null, object selectedHr = null)
         {
             ViewBag.Departments = new SelectList(await _context.Departments.OrderBy(d => d.Name).ToListAsync(), "Id", "Name", selectedDept);
             ViewBag.Hrs = new SelectList(await _context.Employees.Include(e => e.User).Where(e => e.User.Role == "hr").OrderBy(e => e.FirstName).ToListAsync(), "Id", "FullName", selectedHr);
+        }
+        public async Task<IActionResult> OnLeave()
+        {
+            var today = DateTime.Today;
+
+            // Find ALL approved leave requests active today across the whole company
+            var employeesOnLeave = await _context.LeaveRequests
+                .Include(lr => lr.Employee.Department)
+                .Where(lr => lr.Status == "HR Approved" &&
+                              lr.StartDate.Date <= today &&
+                              lr.EndDate.Date >= today)
+                .OrderBy(lr => lr.Employee.Department.Name)
+                .ThenBy(lr => lr.Employee.FirstName)
+                .ToListAsync();
+
+            return View(employeesOnLeave);
         }
     }
 }

@@ -1,0 +1,43 @@
+﻿@model IEnumerable<hrms.Models.LeaveRequest>
+
+@{
+    ViewData["Title"] = "All Employees on Leave Today";
+    Layout = "~/Views/Shared/_HrLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>All Employees on Leave Today (@DateTime.Today.ToString("D"))</h2>
+        <a asp-action="Index" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
+
+    <div class="table-container mt-4">
+        <table class="table">
+            <thead class="table-light">
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Position</th>
+                    <th>Leave Type</th>
+                    <th>Leave End Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var leave in Model)
+                {
+                    <tr>
+                        <td>@leave.Employee.FullName</td>
+                        <td>@(leave.Employee.Department?.Name ?? "N/A")</td>
+                        <td>@leave.Employee.Position</td>
+                        <td>@leave.LeaveType</td>
+                        <td>@leave.EndDate.ToString("d")</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="text-center">No employees are on approved leave today.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

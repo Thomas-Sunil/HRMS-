@@ -215,5 +215,28 @@ namespace hrms.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(LeaveApprovals));
         }
+        public async Task<IActionResult> OnLeave()
+        {
+            var manager = await GetCurrentManagerAsync();
+            if (manager?.DepartmentId == null)
+            {
+                // Safety check
+                return View(new List<LeaveRequest>());
+            }
+
+            var today = DateTime.Today;
+
+            // Find approved leave requests from the manager's team that are active today
+            var employeesOnLeave = await _context.LeaveRequests
+                .Include(lr => lr.Employee)
+                .Where(lr => lr.Employee.DepartmentId == manager.DepartmentId &&
+                              lr.Status == "HR Approved" &&
+                              lr.StartDate.Date <= today &&
+                              lr.EndDate.Date >= today)
+                .OrderBy(lr => lr.Employee.FirstName)
+                .ToListAsync();
+
+            return View(employeesOnLeave);
+        }
     }
 }

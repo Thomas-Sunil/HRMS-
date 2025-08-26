@@ -29,22 +29,23 @@ namespace hrms.Controllers
         public async Task<IActionResult> Index()
         {
             var employee = await GetCurrentUserEmployeeAsync();
-            if (employee == null)
-            {
-                // This is a critical state - user is logged in but has no employee profile
-                return Content("Error: Your user account is not linked to an employee profile.");
-            }
+            if (employee == null) return Content("Error: User not linked to an employee profile.");
 
-            // Fetch projects related to this employee
-            var projects = await _context.Projects
-                .Where(p => p.AssignedEmployees.Any(e => e.Id == employee.Id))
-                .Include(p => p.ProjectTasks)
+            // Fetch this employee's last 5 leave requests to show on the dashboard
+            var myLeaveRequests = await _context.LeaveRequests
+                .Where(lr => lr.EmployeeId == employee.Id)
+                .OrderByDescending(lr => lr.RequestDate)
+                .Take(5)
                 .ToListAsync();
 
-            // Store the projects in the ViewBag, ensuring it's never null
-            ViewBag.Projects = projects ?? new List<Project>();
+            ViewBag.MyLeaveRequests = myLeaveRequests;
 
-            // Pass the employee object as the model to the view
+            // Existing project logic remains
+            ViewBag.Projects = await _context.Projects
+                .Where(p => p.AssignedEmployees.Any(e => e.Id == employee.Id))
+                .Include(p => p.ProjectTasks)
+                .ToListAsync() ?? new List<Project>();
+
             return View(employee);
         }
         public async Task<IActionResult> MyAttendance()

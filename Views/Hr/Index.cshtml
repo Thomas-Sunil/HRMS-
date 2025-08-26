@@ -6,7 +6,16 @@
 }
 
 <div class="container-fluid">
-    <!-- ... (Dashboard Stats Cards are the same) ... -->
+    <h2 class="mb-4">Dashboard Overview</h2>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="dashboard-card">
+                <div class="card-icon"><i class="fas fa-users"></i></div>
+                <h5>Total Employees</h5>
+                <h2 class="card-title">@ViewBag.TotalEmployees</h2>
+            </div>
+        </div>
+    </div>
 
     <div class="row mt-4">
         <div class="col-12">
@@ -18,7 +27,6 @@
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
-                            <!-- Corrected Header Row -->
                             <th>First Name</th>
                             <th>Last Name</th>
                             <th>Department</th>
@@ -34,7 +42,6 @@
                             @foreach (var employee in Model)
                             {
                                 <tr>
-                                    <!-- Corrected Body Row Cells -->
                                     <td>@employee.FirstName</td>
                                     <td>@employee.LastName</td>
                                     <td>@(employee.Department?.Name ?? "N/A")</td>
@@ -59,9 +66,7 @@
                                                 title="View Attendance">
                                             <i class="fas fa-calendar-alt"></i>
                                         </button>
-
                                         <a asp-action="Edit" asp-route-id="@employee.Id" class="btn btn-sm btn-outline-secondary" title="Edit Employee"><i class="fas fa-edit"></i></a>
-
                                         @if (employee.DepartmentId != null)
                                         {
                                             <form asp-action="UnassignFromDepartment" method="post" class="d-inline">
@@ -87,8 +92,7 @@
     </div>
 </div>
 
-
-<!-- BOOTSTRAP MODAL FOR THE CALENDAR -->
+<!-- Modal for the Calendar -->
 <div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -104,40 +108,46 @@
 </div>
 
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('modal-calendar');
-            var modalTitleEl = document.getElementById('attendanceModalLabel');
-            var calendar;
 
-            var attendanceModal = document.getElementById('attendanceModal');
+ @section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var calendarEl = document.getElementById('modal-calendar');
+        var modalTitleEl = document.getElementById('attendanceModalLabel');
+        var calendar;
 
-            // This event fires AFTER the modal is fully visible
-            attendanceModal.addEventListener('shown.bs.modal', function (event) {
-                var button = event.relatedTarget;
-                var employeeId = button.getAttribute('data-employee-id');
-                var employeeName = button.getAttribute('data-employee-name');
+        var attendanceModal = document.getElementById('attendanceModal');
+        
+        // This event fires AFTER the modal is fully visible and ready
+        attendanceModal.addEventListener('shown.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var employeeId = button.getAttribute('data-employee-id');
+            var employeeName = button.getAttribute('data-employee-name');
 
-                modalTitleEl.textContent = 'Attendance Calendar for ' + employeeName;
+            modalTitleEl.textContent = 'Attendance Calendar for ' + employeeName;
+            
+            // Destroy any old calendar instance to prevent event duplication
+            if(calendar) {
+                calendar.destroy();
+            }
 
-                if(calendar) {
-                    calendar.destroy();
-                }
-
-                calendar = new FullCalendar.Calendar(calendarEl, {
-                    initialView: 'dayGridMonth',
-                    headerToolbar: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'dayGridMonth'
-                    },
-                    // Use the NEW HrController action URL
-                    events: `/Hr/GetEmployeeAttendanceData?employeeId=${employeeId}`
-                });
-
-                calendar.render();
+            // Create a new calendar instance
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth'
+                },
+                
+                // --- THIS IS THE CORRECTED URL ---
+                // It now correctly points to the GetEmployeeAttendanceData action
+                // within the current controller (HrController).
+                events: `/Hr/GetEmployeeAttendanceData?employeeId=${employeeId}`
             });
+            
+            calendar.render();
         });
-    </script>
+    });
+</script>
 }

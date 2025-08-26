@@ -45,4 +45,41 @@
     {
         <div class="alert alert-danger">Could not load employee details.</div>
     }
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <h3>My Recent Leave Requests</h3>
+            @{
+                var leaveRequests = ViewBag.MyLeaveRequests as List<hrms.Models.LeaveRequest>;
+            }
+            @if (leaveRequests != null && leaveRequests.Any())
+            {
+                <table class="table table-sm table-striped">
+                    <thead class="table-light">
+                        <tr><th>Type</th><th>Dates</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in leaveRequests)
+                        {
+                            <tr>
+                                <td>@request.LeaveType</td>
+                                <td>@request.StartDate.ToString("d") - @request.EndDate.ToString("d")</td>
+                                <td>
+                                    <span class="badge
+                                                @(request.Status.Contains("Approved") ? "bg-success" : "")
+                                                @(request.Status.Contains("Rejected") ? "bg-danger" : "")
+                                                @(request.Status.Contains("Pending") ? "bg-warning text-dark" : "")">
+                                        @request.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="alert alert-light">You have not submitted any leave requests recently.</div>
+            }
+        </div>
+    </div>
 </div>
