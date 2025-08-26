@@ -45,8 +45,38 @@ namespace hrms.Controllers
                 .Where(p => p.AssignedEmployees.Any(e => e.Id == employee.Id))
                 .Include(p => p.ProjectTasks)
                 .ToListAsync() ?? new List<Project>();
+            var allInvitations = await _context.MeetingInvitations
+                .Include(i => i.Meeting)
+                .Where(i => i.EmployeeId == employee.Id)
+                .OrderBy(i => i.Meeting.StartTime)
+                .ToListAsync();
+
+            // 1. Fetch PENDING meeting invitations
+            ViewBag.PendingInvitations = allInvitations
+                .Where(i => i.Status == "Pending")
+                .ToList();
+
+            // 2. Fetch upcoming ACCEPTED meetings (meetings happening today or in the future)
+            ViewBag.AcceptedMeetings = allInvitations
+                .Where(i => i.Status == "Accepted" && i.Meeting.StartTime.Date >= DateTime.Today)
+                .ToList();
 
             return View(employee);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RespondToInvitation(int invitationId, string status)
+        {
+            var employee = await GetCurrentUserEmployeeAsync();
+            var invitation = await _context.MeetingInvitations.FindAsync(invitationId);
+
+            // Security: ensure user is responding to their own invitation
+            if (invitation != null && invitation.EmployeeId == employee.Id && (status == "Accepted" || status == "Declined"))
+            {
+                invitation.Status = status;
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Index));
         }
         public async Task<IActionResult> MyAttendance()
         {

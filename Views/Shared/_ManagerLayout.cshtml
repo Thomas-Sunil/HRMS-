@@ -30,6 +30,9 @@
             <li class="nav-item">
                 <a class="nav-link" asp-controller="Manager" asp-action="Projects"><i class="fas fa-tasks"></i> Manage Projects</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Meeting" asp-action="Index"><i class="fas fa-handshake"></i> Meetings</a>
+            </li>
             <li class="nav-item"> <a class="nav-link" asp-controller="Manager" asp-action="LeaveApprovals"><i class="fas fa-check-double"></i> Leave Management</a> </li>
             <li class="nav-item">
                 <a class="nav-link" asp-controller="Employee" asp-action="MyAttendance"><i class="fas fa-calendar-alt"></i> My Attendance</a>
@@ -37,9 +40,6 @@
             <li class="nav-item">
                 <a class="nav-link" asp-controller="Manager" asp-action="OnLeave"><i class="fas fa-user-clock"></i> Who's On Leave</a>
             </li>
-            <li class="nav-item">
-    <a class="nav-link" asp-controller="Manager" asp-action="OnLeave"><i class="fas fa-user-clock"></i> Who's On Leave</a>
-</li>
             <li class="nav-item mt-auto">
                 <form asp-controller="Account" asp-action="Logout" method="post">
                     <button type="submit" class="nav-link text-start w-100 btn btn-link">

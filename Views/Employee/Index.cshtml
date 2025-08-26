@@ -2,84 +2,168 @@
 
 @{
     ViewData["Title"] = "My Dashboard";
-    Layout = "~/Views/Shared/_EmployeeLayout.cshtml"; // Ensure this layout exists
-}
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
 
-@{
-    // Cast the ViewBag.Projects to a known type to safely use it
+    // --- Declare all variables at the top for a clean scope ---
     var projects = ViewBag.Projects as List<hrms.Models.Project>;
+    var leaveRequests = ViewBag.MyLeaveRequests as List<hrms.Models.LeaveRequest>;
+    var pendingInvitations = ViewBag.PendingInvitations as List<hrms.Models.MeetingInvitation>;
+    var acceptedMeetings = ViewBag.AcceptedMeetings as List<hrms.Models.MeetingInvitation>;
 }
 
 <div class="container">
+
+    <!-- Display Success Message (e.g., after submitting leave) -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Welcome Header -->
     @if (Model != null)
     {
         <div class="text-center mb-4">
             <h1 class="display-4">Welcome, @Model.FullName</h1>
             <p class="lead">This is your personal dashboard.</p>
         </div>
-
-        <div class="row">
-            <div class="col-md-12">
-                <h3>My Assigned Projects</h3>
-                @if (projects != null && projects.Any())
-                {
-                    <div class="list-group">
-                        @foreach (var project in projects)
-                        {
-                            <div class="list-group-item">
-                                <h5 class="mb-1">@project.Name</h5>
-                                <p class="mb-1">@project.Description</p>
-                                <small>Status: <span class="badge bg-primary">@project.Status</span></small>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="alert alert-info">You are not assigned to any projects.</div>
-                }
-            </div>
-        </div>
     }
     else
     {
         <div class="alert alert-danger">Could not load employee details.</div>
     }
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <h3>My Recent Leave Requests</h3>
-            @{
-                var leaveRequests = ViewBag.MyLeaveRequests as List<hrms.Models.LeaveRequest>;
-            }
-            @if (leaveRequests != null && leaveRequests.Any())
-            {
-                <table class="table table-sm table-striped">
-                    <thead class="table-light">
-                        <tr><th>Type</th><th>Dates</th><th>Status</th></tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var request in leaveRequests)
+
+    <hr class="my-4" />
+
+    <!-- Start of the Two-Column Layout -->
+    <div class="row g-4">
+
+        <!-- ===== LEFT COLUMN ===== -->
+        <div class="col-lg-6">
+            <!-- Card 1: Meeting Invitations -->
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h4><i class="fas fa-envelope-open-text me-2"></i>Meeting Invitations</h4>
+                </div>
+                <div class="card-body">
+                    @if (pendingInvitations != null && pendingInvitations.Any())
+                    {
+                        @foreach (var invite in pendingInvitations)
                         {
-                            <tr>
-                                <td>@request.LeaveType</td>
-                                <td>@request.StartDate.ToString("d") - @request.EndDate.ToString("d")</td>
-                                <td>
-                                    <span class="badge
-                                                @(request.Status.Contains("Approved") ? "bg-success" : "")
-                                                @(request.Status.Contains("Rejected") ? "bg-danger" : "")
-                                                @(request.Status.Contains("Pending") ? "bg-warning text-dark" : "")">
-                                        @request.Status
-                                    </span>
-                                </td>
-                            </tr>
+                            <div class="border-bottom pb-2 mb-2">
+                                <h6 class="mb-1">@invite.Meeting.Title</h6>
+                                <p class="mb-1 text-muted small">@invite.Meeting.StartTime.ToString("f")</p>
+                                <form asp-controller="Employee" asp-action="RespondToInvitation" method="post" class="d-inline">
+                                    <input type="hidden" name="invitationId" value="@invite.Id" />
+                                    <button type="submit" name="status" value="Accepted" class="btn btn-sm btn-outline-success">Accept</button>
+                                    <button type="submit" name="status" value="Declined" class="btn btn-sm btn-outline-danger">Decline</button>
+                                </form>
+                            </div>
                         }
-                    </tbody>
-                </table>
-            }
-            else
-            {
-                <div class="alert alert-light">You have not submitted any leave requests recently.</div>
-            }
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted mt-3">You have no pending meeting invitations.</p>
+                    }
+                </div>
+            </div>
         </div>
-    </div>
+
+        <!-- ===== RIGHT COLUMN ===== -->
+        <div class="col-lg-6">
+            <!-- Card 2: My Upcoming Meetings -->
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h4><i class="fas fa-calendar-check me-2"></i>My Upcoming Meetings</h4>
+                </div>
+                <ul class="list-group list-group-flush">
+                    @if (acceptedMeetings != null && acceptedMeetings.Any())
+                    {
+                        @foreach (var invite in acceptedMeetings)
+                        {
+                            <li class="list-group-item">
+                                <h6>@invite.Meeting.Title</h6>
+                                <small class="text-muted">@invite.Meeting.StartTime.ToString("f")</small>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="list-group-item text-center text-muted">You have no upcoming meetings.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div> <!-- End of the first row -->
+
+
+    <div class="row g-4 mt-1">
+        <!-- ===== LEFT COLUMN (Row 2) ===== -->
+        <div class="col-lg-6">
+            <!-- Card 3: Assigned Projects -->
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h4><i class="fas fa-clipboard-list me-2"></i>My Assigned Projects</h4>
+                </div>
+                <ul class="list-group list-group-flush">
+                    @if (projects != null && projects.Any())
+                    {
+                        @foreach (var project in projects)
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6>@project.Name</h6>
+                                    <small class="text-muted">@project.Description</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill">@project.Status</span>
+                            </li>
+                        }
+                    }
+                    else
+                    {
+                        <li class="list-group-item text-center text-muted">You are not assigned to any projects.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <!-- ===== RIGHT COLUMN (Row 2) ===== -->
+        <div class="col-lg-6">
+            <!-- Card 4: Recent Leave Requests -->
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">
+                    <h4><i class="fas fa-plane me-2"></i>My Recent Leave Requests</h4>
+                </div>
+                <div class="card-body">
+                    @if (leaveRequests != null && leaveRequests.Any())
+                    {
+                        <table class="table table-sm">
+                            <tbody>
+                                @foreach (var request in leaveRequests)
+                                {
+                                    <tr>
+                                        <td>@request.LeaveType</td>
+                                        <td>@request.StartDate.ToString("d") - @request.EndDate.ToString("d")</td>
+                                        <td>
+                                            <span class="badge
+                                                        @(request.Status.Contains("Approved") ? "bg-success" : "")
+                                                        @(request.Status.Contains("Rejected") ? "bg-danger" : "")
+                                                        @(request.Status.Contains("Pending") ? "bg-warning text-dark" : "")">
+                                                @request.Status
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <p class="text-center text-muted mt-3">You have no recent leave requests.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div> <!-- End of the second row -->
 </div>

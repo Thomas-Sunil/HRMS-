@@ -45,6 +45,10 @@ namespace hrms.Models
         [InverseProperty("Manager")]
         public ICollection<Project> ManagedProjects { get; set; } = new List<Project>();
 
+        [InverseProperty("Creator")]
+        public ICollection<Meeting> CreatedMeetings { get; set; } = new List<Meeting>();
+        // --- END FIX ---
+
         [NotMapped]
         public string FullName => $"{FirstName} {LastName}";
     }

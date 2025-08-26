@@ -1,0 +1,18 @@
+﻿@model IEnumerable<hrms.Models.Meeting>
+@{
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<h2>My Meetings</h2>
+<a asp-action="Create" class="btn btn-primary mb-3">Create New Meeting</a>
+
+@foreach (var meeting in Model)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>@meeting.Title</h5>
+            <p><strong>Time:</strong> @meeting.StartTime.ToString("g") to @meeting.EndTime.ToString("g")</p>
+            <p><strong>Invitations Sent:</strong> @meeting.Invitations.Count()</p>
+        </div>
+    </div>
+}

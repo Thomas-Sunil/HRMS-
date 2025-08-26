@@ -1,0 +1,71 @@
+﻿@model hrms.Models.CreateMeetingViewModel
+
+@{
+    ViewData["Title"] = "Create New Meeting";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="table-container p-4">
+        <h2>Create New Meeting</h2>
+        <hr />
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Title" class="control-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Description" class="control-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="StartTime" class="control-label"></label>
+                    <input asp-for="StartTime" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="EndTime" class="control-label"></label>
+                    <input asp-for="EndTime" type="datetime-local" class="form-control" />
+                    <span asp-validation-for="EndTime" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h4 class="mt-4">Invite Team Members</h4>
+            <div class="form-check-list" style="height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 10px;">
+                @if (Model.AvailableTeamMembers != null && Model.AvailableTeamMembers.Any())
+                {
+                    @for (int i = 0; i < Model.AvailableTeamMembers.Count; i++)
+                    {
+                        <div class="form-check">
+                            <!-- This input's 'name' must match the property in the ViewModel -->
+                            <input type="checkbox" name="InvitedEmployeeIds" value="@Model.AvailableTeamMembers[i].Id" class="form-check-input" id="emp-@Model.AvailableTeamMembers[i].Id" />
+                            <label class="form-check-label" for="emp-@Model.AvailableTeamMembers[i].Id">@Model.AvailableTeamMembers[i].FullName</label>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">You have no team members to invite.</p>
+                }
+            </div>
+
+            <div class="form-group mt-4">
+                <input type="submit" value="Create Meeting & Send Invites" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

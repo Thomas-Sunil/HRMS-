@@ -15,6 +15,8 @@ namespace hrms.Data
         public DbSet<PerformanceReview> PerformanceReviews { get; set; }
         public DbSet<Attendance> Attendances { get; set; }
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<Meeting> Meetings { get; set; }
+        public DbSet<MeetingInvitation> MeetingInvitations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
