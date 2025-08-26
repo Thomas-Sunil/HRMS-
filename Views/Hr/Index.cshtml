@@ -91,6 +91,45 @@
         </div>
     </div>
 </div>
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="table-container">
+            <h4>My Recent Leave Requests</h4>
+            @{
+                var myLeaveRequests = ViewBag.MyLeaveRequests as List<hrms.Models.LeaveRequest>;
+            }
+            @if (myLeaveRequests != null && myLeaveRequests.Any())
+            {
+                <table class="table table-sm table-striped">
+                    <thead class="table-light">
+                        <tr><th>Type</th><th>Dates</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in myLeaveRequests)
+                        {
+                            <tr>
+                                <td>@request.LeaveType</td>
+                                <td>@request.StartDate.ToString("d") - @request.EndDate.ToString("d")</td>
+                                <td>
+                                    <span class="badge
+                                                    @(request.Status.Contains("Approved") ? "bg-success" : "")
+                                                    @(request.Status.Contains("Rejected") ? "bg-danger" : "")
+                                                    @(request.Status.Contains("Pending") ? "bg-warning text-dark" : "")">
+                                        @request.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted">You have no recent leave requests.</p>
+            }
+        </div>
+    </div>
+</div>
 
 <!-- Modal for the Calendar -->
 <div class="modal fade" id="attendanceModal" tabindex="-1" aria-labelledby="attendanceModalLabel" aria-hidden="true">

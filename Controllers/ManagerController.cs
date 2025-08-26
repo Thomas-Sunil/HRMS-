@@ -31,9 +31,24 @@ namespace hrms.Controllers
         public async Task<IActionResult> Index()
         {
             var manager = await GetCurrentManagerAsync();
-            if (manager == null || manager.DepartmentId == null)
+            if (manager == null)
             {
-                ViewBag.ErrorMessage = "Manager profile incomplete or not assigned to a department.";
+                ViewBag.ErrorMessage = "Could not find a valid employee profile for the logged-in manager.";
+                return View(new List<Employee>());
+            }
+
+            // ---- START: NEW LOGIC ----
+            // Fetch the logged-in Manager's own leave requests
+            ViewBag.MyLeaveRequests = await _context.LeaveRequests
+                .Where(lr => lr.EmployeeId == manager.Id)
+                .OrderByDescending(lr => lr.RequestDate)
+                .Take(5)
+                .ToListAsync();
+            // ---- END: NEW LOGIC ----
+
+            if (manager.DepartmentId == null)
+            {
+                ViewBag.ErrorMessage = "You are not assigned to a department. Please contact HR.";
                 return View(new List<Employee>());
             }
             var teamMembers = await _context.Employees

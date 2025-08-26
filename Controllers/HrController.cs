@@ -17,11 +17,29 @@ namespace hrms.Controllers
         public async Task<IActionResult> Index()
         {
             ViewBag.TotalEmployees = await _context.Employees.CountAsync();
-            var employees = await _context.Employees
-                .Include(e => e.Department)
-                .Include(e => e.Projects)
-                .ToListAsync();
-            return View(employees);
+        var employees = await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Projects)
+            .ToListAsync();
+
+        // ---- START: NEW LOGIC ----
+        // Fetch the logged-in HR Admin's own leave requests
+        var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == HttpContext.User.Identity.Name.ToLower());
+            if (currentUser != null)
+            {
+                var hrEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.UserId == currentUser.Id);
+                if (hrEmployee != null)
+                {
+                    ViewBag.MyLeaveRequests = await _context.LeaveRequests
+                        .Where(lr => lr.EmployeeId == hrEmployee.Id)
+                        .OrderByDescending(lr => lr.RequestDate)
+                        .Take(5)
+                        .ToListAsync();
+    }
+}
+// ---- END: NEW LOGIC ----
+
+return View(employees);
         }
 
         public IActionResult Add()
