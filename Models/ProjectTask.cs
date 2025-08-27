@@ -17,5 +17,11 @@ namespace hrms.Models
         [Column("project_id")]
         public int ProjectId { get; set; }
         public Project Project { get; set; }
+
+        // --- ADD THESE NEW PROPERTIES ---
+        [Column("assigned_employee_id")]
+        public int? AssignedEmployeeId { get; set; }
+        public Employee AssignedEmployee { get; set; }
+        // --- END NEW PROPERTIES ---
     }
 }

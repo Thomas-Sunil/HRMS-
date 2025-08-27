@@ -1,0 +1,35 @@
+﻿@{
+    ViewData["Title"] = "Project Details";
+    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+}
+@model hrms.ViewModels.EmployeeProjectViewModel
+<!-- ... Layout and Title ... -->
+
+<div class="container">
+    <h2>@Model.Project.Name</h2>
+    <p class="text-muted">@Model.Project.Description</p>
+    <hr />
+
+    <h4>My Tasks</h4>
+    <div class="list-group">
+        @foreach (var task in Model.MyTasks)
+        {
+            <div class="list-group-item d-flex align-items-center">
+                <form asp-action="ToggleTaskStatus" method="post" class="me-3">
+                    <input type="hidden" name="taskId" value="@task.Id" />
+                    <input type="checkbox" @(task.IsCompleted ? "checked" : "") onchange="this.form.submit()" style="transform: scale(1.5);" />
+                </form>
+                @if (task.IsCompleted)
+                {
+                    <del>@task.Description</del>
+                }
+                else
+                {
+
+                    @task.Description
+                }
+            </div>
+        }
+    </div>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>

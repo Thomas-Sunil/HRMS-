@@ -1,5 +1,6 @@
 ﻿using hrms.Data;
 using hrms.Models;
+using hrms.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -62,6 +63,47 @@ namespace hrms.Controllers
                 .ToList();
 
             return View(employee);
+        }
+        public async Task<IActionResult> ProjectDetails(int id)
+        {
+            var employee = await GetCurrentUserEmployeeAsync();
+            var project = await _context.Projects.FindAsync(id);
+            // Security check: an employee can only view a project they are assigned to
+            bool isAssigned = await _context.Entry(project)
+                .Collection(p => p.AssignedEmployees).Query().AnyAsync(e => e.Id == employee.Id);
+
+            if (!isAssigned) return Unauthorized();
+
+            var myTasks = await _context.ProjectTasks
+                .Where(t => t.ProjectId == id && t.AssignedEmployeeId == employee.Id)
+                .OrderBy(t => t.IsCompleted)
+                .ToListAsync();
+
+            var viewModel = new EmployeeProjectViewModel
+            {
+                Project = project,
+                MyTasks = myTasks
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleTaskStatus(int taskId)
+        {
+            var task = await _context.ProjectTasks.FindAsync(taskId);
+            var employee = await GetCurrentUserEmployeeAsync();
+
+            // Security check: Can only toggle tasks assigned to you
+            if (task != null && task.AssignedEmployeeId == employee.Id)
+            {
+                task.IsCompleted = !task.IsCompleted; // Flip the status
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(ProjectDetails), new { id = task.ProjectId });
+            }
+
+            return Unauthorized();
         }
 
         [HttpPost]

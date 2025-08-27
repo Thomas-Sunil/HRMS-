@@ -1,43 +1,118 @@
-﻿@model hrms.Models.ProjectDetailsViewModel
+﻿@model hrms.ViewModels.ProjectDetailViewModel
+
 @{
-    ViewData["Title"] = "Project Details"; Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+    ViewData["Title"] = "Project Details";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
 }
 
-<div class="container">
-    <h2>@Model.Project.Name</h2>
-    <p>@Model.Project.Description</p>
-    <hr />
-    <div class="row">
-        <div class="col-md-6">
-            <h4>Assigned Team Members</h4>
-            <ul>
-                @foreach (var member in Model.Project.AssignedEmployees)
-                {
-                    <li class="d-flex justify-content-between align-items-center mb-2">
-                        @member.FullName
-                        <!-- ADD THIS FORM -->
-                        <form asp-action="UnassignFromProject" method="post">
-                            <input type="hidden" name="projectId" value="@Model.Project.Id" />
-                            <input type="hidden" name="employeeId" value="@member.Id" />
-                            <button type="submit" class="btn btn-sm btn-warning">Remove</button>
-                        </form>
-                    </li>
-                }
-            </ul>
+<div class="container-fluid">
+    <!-- Header with Project Name and Status -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">@Model.Project.Name <span class="badge bg-primary ms-2 fs-6">@Model.Project.Status</span></h2>
+        <div>
+            @if (!Model.Project.Status.Equals("Completed"))
+            {
+                <form asp-action="CompleteProject" method="post" class="d-inline">
+                    <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Marking this project as complete is final. Are you sure?')">
+                        <i class="fas fa-check-circle me-1"></i> Mark as Completed
+                    </button>
+                </form>
+            }
+            <a asp-action="Projects" class="btn btn-secondary">Back to Projects</a>
         </div>
-        <div class="col-md-6">
-            <h4>Assign an Available Employee</h4>
-            <form asp-action="AssignToProject" method="post">
-                <input type="hidden" name="projectId" value="@Model.Project.Id" />
-                <select name="employeeId" class="form-control mb-2">
-                    <option>Select an employee</option>
+    </div>
+    <p class="text-muted">@Model.Project.Description</p>
+
+    <hr />
+
+    <div class="row mt-4">
+        <!-- Main Column for Tasks -->
+        <div class="col-lg-8">
+            <h4><i class="fas fa-tasks me-2"></i>Tasks</h4>
+            <div class="card">
+                <div class="card-body">
+                    <form asp-action="AddTaskToProject" method="post">
+                        <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                        <div class="input-group">
+                            <input name="description" class="form-control" placeholder="New task description..." required />
+                            <select name="assignedEmployeeId" class="form-select" style="max-width: 200px;" required>
+                                <option value="">-- Assign To --</option>
+                                @foreach (var member in Model.AssignedTeamMembers)
+                                {
+                                    <option value="@member.Id">@member.FullName</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-primary">Add Task</button>
+                        </div>
+                    </form>
+                </div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var task in Model.Project.ProjectTasks.OrderBy(t => t.IsCompleted))
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center @(task.IsCompleted ? "list-group-item-light text-muted" : "")">
+                            <div>
+                                @if (task.IsCompleted)
+                                {
+                                    <del>@task.Description</del>
+                                }
+                                else
+                                {
+
+                                    @task.Description
+                                }
+                                <br /><small>Assigned to: <strong>@task.AssignedEmployee?.FullName</strong></small>
+                            </div>
+                            <span class="badge @(task.IsCompleted ? "bg-success" : "bg-warning text-dark")">@(task.IsCompleted ? "Completed" : "Pending")</span>
+                        </li>
+                    }
+                    @if (!Model.Project.ProjectTasks.Any())
+                    {
+                        <li class="list-group-item text-center">No tasks have been created for this project.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <!-- Sidebar Column for Team -->
+        <div class="col-lg-4">
+            <h4><i class="fas fa-users me-2"></i>Team</h4>
+
+            <!-- Assigned Members Card -->
+            <div class="card mb-3">
+                <div class="card-header">Assigned Members (@Model.AssignedTeamMembers.Count())</div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var member in Model.AssignedTeamMembers)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @member.FullName
+                            <form asp-action="UnassignFromProject" method="post">
+                                <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                                <input type="hidden" name="employeeId" value="@member.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-times"></i></button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Available Members Card -->
+            <div class="card">
+                <div class="card-header">Available to Assign (@Model.AvailableTeamMembers.Count())</div>
+                <ul class="list-group list-group-flush">
                     @foreach (var member in Model.AvailableTeamMembers)
                     {
-                        <option value="@member.Id">@member.FullName</option>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            @member.FullName
+                            <form asp-action="AssignToProject" method="post">
+                                <input type="hidden" name="projectId" value="@Model.Project.Id" />
+                                <input type="hidden" name="employeeId" value="@member.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-plus"></i></button>
+                            </form>
+                        </li>
                     }
-                </select>
-                <button type="submit" class="btn btn-success">Assign to Project</button>
-            </form>
+                </ul>
+            </div>
         </div>
     </div>
 </div>

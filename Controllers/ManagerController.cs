@@ -1,5 +1,6 @@
 ﻿using hrms.Data;
 using hrms.Models;
+using hrms.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -127,29 +128,69 @@ namespace hrms.Controllers
         public async Task<IActionResult> ProjectDetails(int id)
         {
             var manager = await GetCurrentManagerAsync();
-            if (manager == null) return NotFound();
-            var project = await _context.Projects.Include(p => p.AssignedEmployees).FirstOrDefaultAsync(p => p.Id == id);
+            var project = await _context.Projects
+                .Include(p => p.AssignedEmployees) // <-- This gets the list of who is on the project
+                .Include(p => p.ProjectTasks).ThenInclude(t => t.AssignedEmployee)
+                .FirstOrDefaultAsync(p => p.Id == id && p.ManagerId == manager.Id);
+
             if (project == null) return NotFound();
+
+            var assignedIds = project.AssignedEmployees.Select(e => e.Id).ToList();
+
+            // This gets employees in the department who are NOT yet on this project
             var availableMembers = await _context.Employees
-                .Where(e => e.DepartmentId == manager.DepartmentId && !e.Projects.Any())
+                .Where(e => e.DepartmentId == manager.DepartmentId && !assignedIds.Contains(e.Id))
                 .ToListAsync();
-            var viewModel = new ProjectDetailsViewModel
+
+            // We use a ViewModel to pass all this data to the view
+            var viewModel = new ProjectDetailViewModel
             {
                 Project = project,
-                AvailableTeamMembers = availableMembers ?? new List<Employee>()
+                AssignedTeamMembers = project.AssignedEmployees,
+                AvailableTeamMembers = availableMembers
             };
             return View(viewModel);
         }
 
+        // POST: /Manager/AddTaskToProject
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AssignToProject(int projectId, int employeeId)
+        public async Task<IActionResult> AddTaskToProject(int projectId, string description, int assignedEmployeeId)
         {
-            var project = await _context.Projects.Include(p => p.AssignedEmployees).FirstOrDefaultAsync(p => p.Id == projectId);
-            var employee = await _context.Employees.FindAsync(employeeId);
-            if (project != null && employee != null)
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(description) && assignedEmployeeId > 0)
             {
-                project.AssignedEmployees.Add(employee);
+                var task = new ProjectTask
+                {
+                    ProjectId = projectId,
+                    Description = description,
+                    AssignedEmployeeId = assignedEmployeeId
+                };
+                _context.ProjectTasks.Add(task);
+
+                // --- WORKFLOW LOGIC ---
+                // If the project is brand new, move it to "In Progress"
+                if (project.Status == "Assigned")
+                {
+                    project.Status = "In Progress";
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(ProjectDetails), new { id = projectId });
+        }
+
+        // POST: /Manager/CompleteProject
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteProject(int projectId)
+        {
+            var project = await _context.Projects.FindAsync(projectId);
+            if (project != null)
+            {
+                project.Status = "Completed";
                 await _context.SaveChangesAsync();
             }
             return RedirectToAction(nameof(ProjectDetails), new { id = projectId });

@@ -118,6 +118,10 @@
                                     <small class="text-muted">@project.Description</small>
                                 </div>
                                 <span class="badge bg-primary rounded-pill">@project.Status</span>
+                                <a asp-action="ProjectDetails" asp-route-id="@project.Id" class="list-group-item list-group-item-action">
+                                    <h5 class="mb-1">@project.Name</h5>
+                                    <!-- ... -->
+                                </a>
                             </li>
                         }
                     }
