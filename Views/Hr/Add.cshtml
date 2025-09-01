@@ -8,96 +8,78 @@
 <div class="container-fluid">
     <h2 class="mb-4">Create New Employee Profile</h2>
 
-    <div class="table-container">
-        <form asp-controller="Hr" asp-action="Add" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <!-- IMPORTANT: enctype="multipart/form-data" is required for file uploads -->
+    <form asp-controller="Hr" asp-action="Add" method="post" enctype="multipart/form-data">
 
-            <h4>Employee Details</h4>
-            <hr />
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="FirstName" class="control-label"></label>
-                        <input asp-for="FirstName" class="form-control" />
-                        <span asp-validation-for="FirstName" class="text-danger"></span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="LastName" class="control-label"></label>
-                        <input asp-for="LastName" class="form-control" />
-                        <span asp-validation-for="LastName" class="text-danger"></span>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="Email" class="control-label"></label>
-                        <input asp-for="Email" class="form-control" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="PhoneNumber" class="control-label"></label>
-                        <input asp-for="PhoneNumber" class="form-control" />
-                    </div>
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs" id="employeeTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab">Personal Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="professional-tab" data-bs-toggle="tab" data-bs-target="#professional" type="button" role="tab">Professional Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="login-tab" data-bs-toggle="tab" data-bs-target="#login" type="button" role="tab">Login & Access</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content Panes -->
+        <div class="tab-content table-container p-3" id="employeeTabContent">
+
+            <!-- Personal Details Tab -->
+            <div class="tab-pane fade show active" id="personal" role="tabpanel" aria-labelledby="personal-tab">
+                <h4 class="mb-3">Personal Information</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label asp-for="FirstName"></label><input asp-for="FirstName" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="LastName"></label><input asp-for="LastName" class="form-control" /></div>
+                    <div class="col-md-12 mb-3"><label asp-for="AddressLine1"></label><input asp-for="AddressLine1" class="form-control" placeholder="Street Address" /></div>
+                    <div class="col-md-4 mb-3"><label asp-for="City"></label><input asp-for="City" class="form-control" /></div>
+                    <div class="col-md-4 mb-3"><label asp-for="PostalCode"></label><input asp-for="PostalCode" class="form-control" /></div>
+                    <div class="col-md-4 mb-3"><label asp-for="Country"></label><input asp-for="Country" class="form-control" /></div>
+                    <div class="col-md-12 mb-3"><label asp-for="Photo" class="form-label"></label><input asp-for="Photo" class="form-control" type="file" /></div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="Position" class="control-label"></label>
-                        <input asp-for="Position" class="form-control" />
-                        <span asp-validation-for="Position" class="text-danger"></span>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="DateOfJoining" class="control-label"></label>
-                        <input asp-for="DateOfJoining" type="date" class="form-control" />
-                        <span asp-validation-for="DateOfJoining" class="text-danger"></span>
+
+            <!-- Professional Details Tab -->
+            <div class="tab-pane fade" id="professional" role="tabpanel" aria-labelledby="professional-tab">
+                <h4 class="mb-3">Professional Information</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label asp-for="Email">Work Email</label><input asp-for="Email" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="Position"></label><input asp-for="Position" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="DateOfJoining"></label><input asp-for="DateOfJoining" type="date" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="HighestQualification"></label><input asp-for="HighestQualification" class="form-control" /></div>
+                    <div class="col-md-12 mb-3">
+                        <label asp-for="Certificates" class="form-label">Upload Certificates (can select multiple)</label>
+                        <input asp-for="Certificates" class="form-control" type="file" multiple />
                     </div>
                 </div>
             </div>
 
-            <h4 class="mt-4">Login Credentials</h4>
-            <hr />
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="Username" class="control-label"></label>
-                        <input asp-for="Username" class="form-control" />
-                        <span asp-validation-for="Username" class="text-danger"></span>
+            <!-- Login Details Tab -->
+            <div class="tab-pane fade" id="login" role="tabpanel" aria-labelledby="login-tab">
+                <h4 class="mb-3">Access Control</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label asp-for="Username"></label><input asp-for="Username" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="Password"></label><input asp-for="Password" type="password" class="form-control" /></div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Role"></label>
+                        <select asp-for="Role" class="form-control">
+                            <option value="">-- Select Role --</option>
+                            <option value="employee">Employee</option>
+                            <option value="manager">Manager</option>
+                            <option value="hr">HR Admin</option>
+                        </select>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group mb-3">
-                        <label asp-for="Password" class="control-label"></label>
-                        <input asp-for="Password" class="form-control" />
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
-                </div>
             </div>
+        </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Role" class="control-label"></label>
-                <select asp-for="Role" class="form-control">
-                    <option value="">-- Select Role --</option>
-                    <option value="employee">Employee</option>
-                    <option value="manager">Manager</option>
-                    <option value="hr">HR Admin</option>
-                </select>
-                <span asp-validation-for="Role" class="text-danger"></span>
-            </div>
-
-            <div class="form-group mt-4">
-                <input type="submit" value="Create Employee" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
-    </div>
+        <div class="form-group mt-3">
+            <input type="submit" value="Create Employee" class="btn btn-primary" />
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
 </div>
 
 @section Scripts {

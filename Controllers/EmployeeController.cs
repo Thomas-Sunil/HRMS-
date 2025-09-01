@@ -32,35 +32,35 @@ namespace hrms.Controllers
             var employee = await GetCurrentUserEmployeeAsync();
             if (employee == null) return Content("Error: User not linked to an employee profile.");
 
-            // Fetch this employee's last 5 leave requests to show on the dashboard
-            var myLeaveRequests = await _context.LeaveRequests
-                .Where(lr => lr.EmployeeId == employee.Id)
-                .OrderByDescending(lr => lr.RequestDate)
-                .Take(5)
+            // ---- THIS IS THE FIX ----
+            // We now filter for projects where the status is NOT 'Completed'.
+            ViewBag.ActiveProjects = await _context.Projects
+                .Where(p => p.AssignedEmployees.Any(e => e.Id == employee.Id) &&
+                              p.Status != "Completed") // This is the new condition
+                .ToListAsync();
+            // ---- END FIX ----
+
+            // --- This part remains the same ---
+            ViewBag.CompletedProjects = await _context.PerformanceReviews
+                .Include(r => r.Project)
+                .Where(r => r.EmployeeId == employee.Id)
+                .OrderByDescending(r => r.ReviewDate)
                 .ToListAsync();
 
-            ViewBag.MyLeaveRequests = myLeaveRequests;
+            ViewBag.MyLeaveRequests = await _context.LeaveRequests
+                .Where(lr => lr.EmployeeId == employee.Id)
+                .OrderByDescending(lr => lr.RequestDate).Take(5).ToListAsync();
 
-            // Existing project logic remains
-            ViewBag.Projects = await _context.Projects
-                .Where(p => p.AssignedEmployees.Any(e => e.Id == employee.Id))
-                .Include(p => p.ProjectTasks)
-                .ToListAsync() ?? new List<Project>();
-            var allInvitations = await _context.MeetingInvitations
+            ViewBag.PendingInvitations = await _context.MeetingInvitations
                 .Include(i => i.Meeting)
-                .Where(i => i.EmployeeId == employee.Id)
+                .Where(i => i.EmployeeId == employee.Id && i.Status == "Pending")
                 .OrderBy(i => i.Meeting.StartTime)
                 .ToListAsync();
 
-            // 1. Fetch PENDING meeting invitations
-            ViewBag.PendingInvitations = allInvitations
-                .Where(i => i.Status == "Pending")
-                .ToList();
-
-            // 2. Fetch upcoming ACCEPTED meetings (meetings happening today or in the future)
-            ViewBag.AcceptedMeetings = allInvitations
+            ViewBag.AcceptedMeetings = await _context.MeetingInvitations
+                .Include(i => i.Meeting)
                 .Where(i => i.Status == "Accepted" && i.Meeting.StartTime.Date >= DateTime.Today)
-                .ToList();
+                .ToListAsync();
 
             return View(employee);
         }

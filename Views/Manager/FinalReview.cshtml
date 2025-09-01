@@ -1,0 +1,43 @@
+﻿@model hrms.Models.FinalReviewViewModel
+@{
+    ViewData["Title"] = "Complete Project";
+    Layout = "~/Views/Shared/_ManagerLayout.cshtml";
+}
+<div class="container-fluid">
+    <h2>Complete Project: @Model.Project.Name</h2>
+    <p>Please provide final performance feedback for each team member before closing the project.</p>
+
+    <form asp-action="SubmitFinalReviews" method="post">
+        <input type="hidden" asp-for="Project.Id" />
+
+        <div class="table-container p-3">
+            @for (int i = 0; i < Model.Reviews.Count; i++)
+            {
+                <input type="hidden" asp-for="Reviews[i].EmployeeId" />
+                <h4 class="mt-3">@Model.Reviews[i].EmployeeName</h4>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label asp-for="Reviews[i].Rating" class="form-label"></label>
+                        <select asp-for="Reviews[i].Rating" class="form-select">
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="3">3 - Good</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="1">1 - Poor</option>
+                        </select>
+                    </div>
+                    <div class="col-md-10">
+                        <label asp-for="Reviews[i].Feedback" class="form-label"></label>
+                        <textarea asp-for="Reviews[i].Feedback" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <hr />
+            }
+        </div>
+
+        <div class="form-group mt-3">
+            <input type="submit" value="Submit Reviews & Complete Project" class="btn btn-success" />
+            <a asp-action="ProjectDetails" asp-route-id="@Model.Project.Id" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>

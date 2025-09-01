@@ -40,6 +40,42 @@ namespace hrms.Models
         public int? ReportingHrId { get; set; }
         [ForeignKey("ReportingHrId")]
         public Employee? ReportingHr { get; set; }
+        [Column("photo_path")]
+        public string? PhotoPath { get; set; }
+
+        [Column("address_line_1")]
+        public string? AddressLine1 { get; set; }
+
+        [Column("address_line_2")]
+        public string? AddressLine2 { get; set; }
+
+        [Column("city")]
+        public string? City { get; set; }
+
+        [Column("state")]
+        public string? State { get; set; }
+
+        [Column("postal_code")]
+        public string? PostalCode { get; set; }
+
+        [Column("country")]
+        public string? Country { get; set; }
+
+        [Column("personal_email")]
+        public string? PersonalEmail { get; set; }
+
+        // --- NEW PROFESSIONAL DETAIL FIELDS ---
+        [Column("highest_qualification")]
+        public string? HighestQualification { get; set; }
+
+        [Column("previous_company")]
+        public string? PreviousCompany { get; set; }
+
+        [Column("previous_experience_years")]
+        public int? PreviousExperienceYears { get; set; }
+
+        // --- Navigation Property for Documents ---
+        public ICollection<EmployeeDocument> Documents { get; set; } = new List<EmployeeDocument>();
 
         public ICollection<Project> Projects { get; set; } = new List<Project>();
         [InverseProperty("Manager")]

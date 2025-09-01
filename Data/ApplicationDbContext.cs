@@ -17,7 +17,7 @@ namespace hrms.Data
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
         public DbSet<MeetingInvitation> MeetingInvitations { get; set; }
-
+        public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

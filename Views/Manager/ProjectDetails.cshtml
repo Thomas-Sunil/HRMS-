@@ -1,4 +1,4 @@
-﻿@model hrms.ViewModels.ProjectDetailViewModel
+﻿@model hrms.Models.ProjectDetailViewModel
 
 @{
     ViewData["Title"] = "Project Details";
@@ -14,9 +14,13 @@
             {
                 <form asp-action="CompleteProject" method="post" class="d-inline">
                     <input type="hidden" name="projectId" value="@Model.Project.Id" />
-                    <button type="submit" class="btn btn-success" onclick="return confirm('Marking this project as complete is final. Are you sure?')">
-                        <i class="fas fa-check-circle me-1"></i> Mark as Completed
-                    </button>
+                    <!-- In Views/Manager/ProjectDetails.cshtml, REPLACE the "Mark as Completed" form with this -->
+                    @if (!Model.Project.Status.Equals("Completed"))
+                    {
+                        <a asp-action="CompleteProject" asp-route-projectId="@Model.Project.Id" class="btn btn-success">
+                            <i class="fas fa-check-circle me-1"></i> Provide Feedback & Complete Project
+                        </a>
+                    }
                 </form>
             }
             <a asp-action="Projects" class="btn btn-secondary">Back to Projects</a>

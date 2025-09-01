@@ -101,35 +101,45 @@
 
     <div class="row g-4 mt-1">
         <!-- ===== LEFT COLUMN (Row 2) ===== -->
+        <div class="card h-100 shadow-sm">
+                 <div class="card-header"><h4><i class="fas fa-clipboard-list me-2"></i>My Active Projects</h4></div>
+                 <ul class="list-group list-group-flush">
+                     @{ var activeProjects = ViewBag.ActiveProjects as List<hrms.Models.Project>; }
+                     @if (activeProjects != null && activeProjects.Any())
+                     {
+                         @foreach (var project in activeProjects)
+                         {
+                             <li class="list-group-item">
+                                 <a asp-action="ProjectDetails" asp-route-id="@project.Id"><strong>@project.Name</strong></a>
+                                 <span class="badge bg-primary float-end">@project.Status</span>
+                             </li>
+                         }
+                     }
+                     else { <li class="list-group-item text-center text-muted">No active projects.</li> }
+                 </ul>
+             </div>
+        </div>
+         <!-- ===== RIGHT COLUMN (Row 2) ===== -->
         <div class="col-lg-6">
-            <!-- Card 3: Assigned Projects -->
-            <div class="card h-100 shadow-sm">
-                <div class="card-header">
-                    <h4><i class="fas fa-clipboard-list me-2"></i>My Assigned Projects</h4>
-                </div>
+             <!-- Completed Projects History Card -->
+             <div class="card h-100 shadow-sm">
+                <div class="card-header"><h4><i class="fas fa-history me-2"></i>Completed Project History</h4></div>
                 <ul class="list-group list-group-flush">
-                    @if (projects != null && projects.Any())
-                    {
-                        @foreach (var project in projects)
-                        {
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6>@project.Name</h6>
-                                    <small class="text-muted">@project.Description</small>
-                                </div>
-                                <span class="badge bg-primary rounded-pill">@project.Status</span>
-                                <a asp-action="ProjectDetails" asp-route-id="@project.Id" class="list-group-item list-group-item-action">
-                                    <h5 class="mb-1">@project.Name</h5>
-                                    <!-- ... -->
-                                </a>
+                     @{ var completedProjects = ViewBag.CompletedProjects as List<hrms.Models.PerformanceReview>; }
+                     @if (completedProjects != null && completedProjects.Any())
+                     {
+                         @foreach (var review in completedProjects)
+                         {
+                            <li class="list-group-item">
+                                <strong>@review.Project.Name</strong>
+                                <span class="badge bg-success float-end">Completed</span>
+                                <p class="mb-0 mt-2"><strong>Manager Feedback:</strong> <em>"@review.Feedback"</em></p>
+                                <p class="mb-0"><strong>Rating:</strong> @review.Rating / 5</p>
                             </li>
-                        }
-                    }
-                    else
-                    {
-                        <li class="list-group-item text-center text-muted">You are not assigned to any projects.</li>
-                    }
-                </ul>
+                         }
+                     }
+                     else { <li class="list-group-item text-center text-muted">No completed projects on record.</li> }
+                 </ul>
             </div>
         </div>
         <!-- ===== RIGHT COLUMN (Row 2) ===== -->
