@@ -8,71 +8,66 @@
 <div class="container-fluid">
     <h2 class="mb-4">Edit Profile for @Model.FirstName @Model.LastName</h2>
 
-    <div class="table-container">
-        <form asp-action="Edit">
-            <input type="hidden" asp-for="Id" />
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="FirstName"></label>
-                    <input asp-for="FirstName" class="form-control" />
-                    <span asp-validation-for="FirstName" class="text-danger"></span>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="LastName"></label>
-                    <input asp-for="LastName" class="form-control" />
-                    <span asp-validation-for="LastName" class="text-danger"></span>
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs" id="editEmployeeTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="personal-tab-edit" data-bs-toggle="tab" data-bs-target="#personal-edit" type="button">Personal Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="professional-tab-edit" data-bs-toggle="tab" data-bs-target="#professional-edit" type="button">Professional & Assignment</button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content table-container p-3" id="editEmployeeTabContent">
+
+            <!-- Personal Details Tab -->
+            <div class="tab-pane fade show active" id="personal-edit" role="tabpanel">
+                <h4 class="mb-3">Personal Information</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label asp-for="FirstName"></label><input asp-for="FirstName" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="LastName"></label><input asp-for="LastName" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="PhoneNumber"></label><input asp-for="PhoneNumber" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="AddressLine1"></label><input asp-for="AddressLine1" class="form-control" /></div>
+                    <div class="col-md-4 mb-3"><label asp-for="City"></label><input asp-for="City" class="form-control" /></div>
+                    <div class="col-md-4 mb-3"><label asp-for="PostalCode"></label><input asp-for="PostalCode" class="form-control" /></div>
+                    <div class="col-md-4 mb-3"><label asp-for="Country"></label><input asp-for="Country" class="form-control" /></div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Email"></label>
-                    <input asp-for="Email" class="form-control" />
-                    <span asp-validation-for="Email" class="text-danger"></span>
+            <!-- Professional & Assignment Tab -->
+            <div class="tab-pane fade" id="professional-edit" role="tabpanel">
+                <h4 class="mb-3">Professional Information</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3"><label asp-for="Email">Work Email</label><input asp-for="Email" class="form-control" /></div>
+                    <div class="col-md-6 mb-3"><label asp-for="Position"></label><input asp-for="Position" class="form-control" /></div>
+                    <div class="col-md-12 mb-3"><label asp-for="HighestQualification"></label><input asp-for="HighestQualification" class="form-control" /></div>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="PhoneNumber"></label>
-                    <input asp-for="PhoneNumber" class="form-control" />
+
+                <h4 class="mt-4">Assignment</h4>
+                <hr />
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DepartmentId"></label>
+                        <select asp-for="DepartmentId" class="form-control" asp-items="(SelectList)@ViewBag.Departments">
+                            <option value="">-- Unassigned --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ReportingHrId"></label>
+                        <select asp-for="ReportingHrId" class="form-control" asp-items="(SelectList)@ViewBag.Hrs">
+                            <option value="">-- No HR Assigned --</option>
+                        </select>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Position"></label>
-                    <input asp-for="Position" class="form-control" />
-                </div>
-            </div>
-
-            <h4 class="mt-4">Assignment</h4>
-            <hr />
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label asp-for="DepartmentId"></label>
-                    <select asp-for="DepartmentId" class="form-control" asp-items="(SelectList)ViewBag.Departments">
-                        <option value="">-- Unassigned --</option>
-                    </select>
-                </div>
-                <!-- ---- ADDED REPORTING HR DROPDOWN ---- -->
-                <div class="col-md-6 mb-3">
-                    <label asp-for="ReportingHrId"></label>
-                    <select asp-for="ReportingHrId" class="form-control" asp-items="(SelectList)ViewBag.Hrs">
-                        <option value="">-- No HR Assigned --</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group mt-4">
-                <input type="submit" value="Save Changes" class="btn btn-primary" />
-                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
-}
+        <div class="form-group mt-3">
+            <input type="submit" value="Save Changes" class="btn btn-primary" />
+            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>

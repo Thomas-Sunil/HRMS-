@@ -140,9 +140,11 @@ namespace hrms.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
+
             var employee = await _context.Employees.FindAsync(id);
             if (employee == null) return NotFound();
 
+            // Map all the data from the Employee entity to the ViewModel
             var viewModel = new EditEmployeeViewModel
             {
                 Id = employee.Id,
@@ -150,41 +152,56 @@ namespace hrms.Controllers
                 LastName = employee.LastName,
                 Email = employee.Email,
                 PhoneNumber = employee.PhoneNumber,
-                DepartmentId = employee.DepartmentId,
                 Position = employee.Position,
+                AddressLine1 = employee.AddressLine1,
+                City = employee.City,
+                PostalCode = employee.PostalCode,
+                Country = employee.Country,
+                HighestQualification = employee.HighestQualification,
+                DepartmentId = employee.DepartmentId,
                 ReportingHrId = employee.ReportingHrId
             };
+
             await PopulateEditDropdowns(employee.DepartmentId, employee.ReportingHrId);
             return View(viewModel);
         }
 
+        // POST: /Hr/Edit/5 - NEW, EXPANDED VERSION
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, EditEmployeeViewModel viewModel)
         {
             if (id != viewModel.Id) return NotFound();
+
             if (ModelState.IsValid)
             {
                 var employeeToUpdate = await _context.Employees.FindAsync(id);
                 if (employeeToUpdate == null) return NotFound();
 
+                // Map all the updated data from the ViewModel back to the entity
                 employeeToUpdate.FirstName = viewModel.FirstName;
                 employeeToUpdate.LastName = viewModel.LastName;
                 employeeToUpdate.Email = viewModel.Email;
                 employeeToUpdate.PhoneNumber = viewModel.PhoneNumber;
-                employeeToUpdate.DepartmentId = viewModel.DepartmentId;
                 employeeToUpdate.Position = viewModel.Position;
+                employeeToUpdate.AddressLine1 = viewModel.AddressLine1;
+                employeeToUpdate.City = viewModel.City;
+                employeeToUpdate.PostalCode = viewModel.PostalCode;
+                employeeToUpdate.Country = viewModel.Country;
+                employeeToUpdate.HighestQualification = viewModel.HighestQualification;
+                employeeToUpdate.DepartmentId = viewModel.DepartmentId;
                 employeeToUpdate.ReportingHrId = viewModel.ReportingHrId;
 
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Employee details updated successfully.";
                 return RedirectToAction(nameof(Index));
             }
+
+            // If the model is invalid, we must repopulate the dropdowns and return the view
             await PopulateEditDropdowns(viewModel.DepartmentId, viewModel.ReportingHrId);
             return View(viewModel);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UnassignFromDepartment(int employeeId)
         {
             var employee = await _context.Employees.FindAsync(employeeId);
