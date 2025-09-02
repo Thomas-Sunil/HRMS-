@@ -21,5 +21,8 @@ namespace hrms.Models
         public DateTime EndDate { get; set; }
 
         public string? Reason { get; set; }
+        [Required(ErrorMessage = "Please specify the duration.")]
+        [Display(Name = "Leave Duration")]
+        public string DurationType { get; set; }
     }
 }

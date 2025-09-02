@@ -47,5 +47,8 @@ namespace hrms.Models
         [Column("hr_approved_by_id")]
         public int? HrApprovedById { get; set; }
         // --- END FIX ---
+        // ---- Add this new property inside your LeaveRequest model ----
+        [Column("duration_type")]
+        public string DurationType { get; set; } // "Full Day", "Half Day - First Half", "Half Day - Second Half"
     }
 }

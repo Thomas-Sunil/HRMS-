@@ -42,11 +42,18 @@ namespace hrms.Controllers
             return View(viewModel);
         }
 
-        // POST: /Leave/Apply
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Apply(LeaveRequestViewModel viewModel)
         {
+            // ---- NEW LOGIC ----
+            // If it's a half day, force the End Date to be the same as the Start Date
+            if (viewModel.DurationType.StartsWith("Half Day"))
+            {
+                viewModel.EndDate = viewModel.StartDate;
+            }
+            // ---- END NEW LOGIC ----
+
             var employee = await GetCurrentUserEmployeeAsync();
             if (employee == null) return Unauthorized();
 
@@ -58,8 +65,9 @@ namespace hrms.Controllers
                     RequestDate = DateTime.Today,
                     LeaveType = viewModel.LeaveType,
                     StartDate = viewModel.StartDate,
-                    EndDate = viewModel.EndDate,
-                    Reason = viewModel.Reason
+                    EndDate = viewModel.EndDate, // Now using the corrected EndDate
+                    Reason = viewModel.Reason,
+                    DurationType = viewModel.DurationType // Save the duration type
                 };
 
                 var userRole = employee.User?.Role;

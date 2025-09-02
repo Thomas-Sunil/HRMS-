@@ -120,18 +120,22 @@ namespace hrms.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
+
         public async Task<IActionResult> MyAttendance()
         {
+            // The view needs the Employee object to display the title.
             var employee = await GetCurrentUserEmployeeAsync();
-            if (employee == null) return Unauthorized();
+            if (employee == null)
+            {
+                // This handles cases where the user might not have an employee profile yet.
+                return Content("Unable to find an employee profile for your user account.");
+            }
 
-            var attendanceRecords = await _context.Attendances
-                .Where(a => a.EmployeeId == employee.Id)
-                .OrderByDescending(a => a.Date)
-                .Take(30) // Show the last 30 records for performance
-                .ToListAsync();
-
-            return View(attendanceRecords);
+            // --- THIS IS THE FIX ---
+            // Pass the single 'employee' object as the model to the view.
+            // DO NOT pass the list of attendance records.
+            return View(employee);
+            // --- END FIX ---
         }
 
         [HttpGet]

@@ -1,23 +1,38 @@
-﻿@{
+﻿@model hrms.Models.Employee
+
+@{
     ViewData["Title"] = "My Attendance";
-    Layout = "~/Views/Shared/_EmployeeLayout.cshtml";
+
+    // --- THIS IS THE FIX ---
+    // Dynamically select the layout based on the logged-in user's role.
+    var userRole = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+    string layout = userRole switch
+    {
+        "hr" => "_HrLayout.cshtml",
+        "manager" => "_ManagerLayout.cshtml",
+        _ => "_EmployeeLayout.cshtml" // Default for employees and others
+    };
+    Layout = $"~/Views/Shared/{layout}";
+    // --- END FIX ---
 }
 
-<div class="container">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>My Attendance Calendar</h2>
-        <a asp-action="Index" class="btn btn-secondary">Back to Dashboard</a>
+        @if (Model != null)
+        {
+            <h2>Attendance Calendar for @Model.FullName</h2>
+        }
     </div>
 
-    <!-- This is where the calendar will be rendered -->
-    <div id="attendance-calendar"></div>
+    <div class="table-container p-3">
+        <div id="attendance-calendar"></div>
+    </div>
 </div>
 
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('attendance-calendar');
-
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
                 headerToolbar: {
@@ -25,17 +40,8 @@
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek'
                 },
-                // Fetch attendance data from our new controller action
-                events: '/Employee/GetMyAttendanceData',
-
-                // This function styles Saturdays and Sundays
-                dayCellDidMount: function(arg) {
-                    if (arg.date.getDay() === 0 || arg.date.getDay() === 6) { // 0 = Sunday, 6 = Saturday
-                        arg.el.style.backgroundColor = '#f1f1f1'; // Light grey for weekends
-                    }
-                }
+                events: '/Employee/GetMyAttendanceData'
             });
-
             calendar.render();
         });
     </script>
