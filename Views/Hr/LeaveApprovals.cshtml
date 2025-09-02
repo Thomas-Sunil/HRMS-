@@ -15,6 +15,8 @@
                     <th>Employee</th>
                     <th>Department</th>
                     <th>Dates</th>
+                    <!-- NEW COLUMN HEADER -->
+                    <th>Duration</th>
                     <th>Type</th>
                     <th>Current Status</th>
                     <th>Actions</th>
@@ -25,19 +27,21 @@
                 {
                     <tr>
                         <td>@request.Employee.FullName</td>
-                        <td>@request.Employee.Department?.Name</td>
+                        <td>@(request.Employee.Department?.Name ?? "N/A")</td>
                         <td>@request.StartDate.ToString("d") - @request.EndDate.ToString("d")</td>
+                        <!-- NEW COLUMN CELL -->
+                        <td>@request.DurationType</td>
                         <td>@request.LeaveType</td>
                         <td>
                             <span class="badge
-                                    @(request.Status == "Pending HR Approval" ? "bg-primary" : "")
-                                    @(request.Status == "Pending Manager Approval" ? "bg-warning text-dark" : "")">
+                                    @(request.Status == "Pending HR Approval" ? "bg-primary" : "bg-warning text-dark")">
                                 @request.Status
                             </span>
                         </td>
                         <td>
                             @if (request.Status == "Pending HR Approval" || request.Status == "Pending Manager Approval")
                             {
+                                <!-- Action buttons are unchanged -->
                                 <div class="d-flex">
                                     <form asp-action="ApproveLeave" asp-route-id="@request.Id" method="post" class="me-2">
                                         <button type="submit" class="btn btn-sm btn-success">Approve</button>
@@ -52,7 +56,7 @@
                 }
                 @if (!Model.Any())
                 {
-                    <tr><td colspan="6" class="text-center">No active leave requests.</td></tr>
+                    <tr><td colspan="7" class="text-center">No active leave requests require your attention.</td></tr>
                 }
             </tbody>
         </table>

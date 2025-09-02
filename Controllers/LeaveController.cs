@@ -46,13 +46,15 @@ namespace hrms.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Apply(LeaveRequestViewModel viewModel)
         {
-            // ---- NEW LOGIC ----
-            // If it's a half day, force the End Date to be the same as the Start Date
+            // First, force EndDate to match StartDate if it's a half-day leave
             if (viewModel.DurationType.StartsWith("Half Day"))
             {
                 viewModel.EndDate = viewModel.StartDate;
             }
-            // ---- END NEW LOGIC ----
+
+            // Re-check model validity after our adjustment
+            ModelState.Clear(); // Clear previous errors, if any
+            TryValidateModel(viewModel); // Re-run validation
 
             var employee = await GetCurrentUserEmployeeAsync();
             if (employee == null) return Unauthorized();
@@ -65,26 +67,53 @@ namespace hrms.Controllers
                     RequestDate = DateTime.Today,
                     LeaveType = viewModel.LeaveType,
                     StartDate = viewModel.StartDate,
-                    EndDate = viewModel.EndDate, // Now using the corrected EndDate
+                    EndDate = viewModel.EndDate,
                     Reason = viewModel.Reason,
-                    DurationType = viewModel.DurationType // Save the duration type
+                    DurationType = viewModel.DurationType
                 };
 
+                // --- THIS IS THE NEW, ENHANCED WORKFLOW LOGIC ---
                 var userRole = employee.User?.Role;
-                if (userRole is "manager" or "hr")
+
+                if (userRole == "hr")
                 {
+                    // An HR person's leave request logic:
+                    if (employee.ReportingHrId.HasValue && employee.ReportingHrId != employee.Id)
+                    {
+                        // If they have a Reporting HR (who is not themselves), it goes to them.
+                        // We still call this "Pending HR Approval" because the approver is also an HR person.
+                        leaveRequest.Status = "Pending HR Approval";
+                    }
+                    else
+                    {
+                        // If they are their own Reporting HR or have none, it's auto-approved.
+                        leaveRequest.Status = "HR Approved";
+                        leaveRequest.HrApprovedById = employee.Id; // Record self-approval
+                    }
+                }
+                else if (userRole == "manager")
+                {
+                    // A Manager's leave request goes directly to HR for approval.
                     leaveRequest.Status = "Pending HR Approval";
                 }
-                else
+                else // This is a regular "employee"
                 {
-                    leaveRequest.Status = (employee.Department?.HeadOfDepartmentId.HasValue ?? false)
-                        ? "Pending Manager Approval"
-                        : "Pending HR Approval";
+                    // An Employee's request goes to their manager, if one exists.
+                    var departmentHeadId = employee.Department?.HeadOfDepartmentId;
+                    if (departmentHeadId.HasValue)
+                    {
+                        leaveRequest.Status = "Pending Manager Approval";
+                    }
+                    else
+                    {
+                        // If their dept has no manager, escalate to HR.
+                        leaveRequest.Status = "Pending HR Approval";
+                    }
                 }
 
                 _context.Add(leaveRequest);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Your leave request has been submitted successfully!";
+                TempData["SuccessMessage"] = "Your leave request was submitted successfully!";
                 return RedirectToAction("Index", "Employee");
             }
 
