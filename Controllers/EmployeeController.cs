@@ -140,67 +140,70 @@ namespace hrms.Controllers
 
         [HttpGet]
         [HttpGet]
-        public async Task<IActionResult> GetMyAttendanceData()
+        public async Task<IActionResult> GetMyAttendanceData(DateTime start, DateTime end)
         {
             var employee = await GetCurrentUserEmployeeAsync();
             if (employee == null) return Unauthorized();
 
             var events = new List<object>();
 
-            // 1. Fetch all actual attendance and leave records for the employee
+            // 1. Fetch ALL data first: actual attendance AND approved leave requests
             var attendances = await _context.Attendances
-                .Where(a => a.EmployeeId == employee.Id)
-                .ToDictionaryAsync(a => a.Date, a => a.Status); // Use a dictionary for fast lookups
+                .Where(a => a.EmployeeId == employee.Id && a.Date >= start && a.Date <= end)
+                .ToDictionaryAsync(a => a.Date);
 
             var leaveRequests = await _context.LeaveRequests
-                .Where(lr => lr.EmployeeId == employee.Id && lr.Status.Contains("Approved"))
+                .Where(lr => lr.EmployeeId == employee.Id &&
+                             lr.Status == "HR Approved" && // Only show approved leaves
+                             lr.StartDate <= end && lr.EndDate >= start)
                 .ToListAsync();
 
-            // 2. Loop through every day from joining date until today
-            for (var day = employee.DateOfJoining.Date; day.Date <= DateTime.Today; day = day.AddDays(1))
+            // 2. Loop through every day in the visible calendar range
+            for (var day = start.Date; day.Date <= end.Date; day = day.AddDays(1))
             {
-                // 3. Skip weekends (Saturday and Sunday)
-                if (day.DayOfWeek == DayOfWeek.Sunday || day.DayOfWeek == DayOfWeek.Saturday)
+                if (day < employee.DateOfJoining.Date || day > DateTime.Today || day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday)
                 {
-                    continue;
+                    continue; // Skip days before joining, future days, and weekends
                 }
 
-                // 4. Check if the user had an attendance record for this day
-                if (attendances.TryGetValue(day, out var status))
+                if (attendances.ContainsKey(day))
                 {
-                    // User was present, add a green event
-                    events.Add(new
-                    {
-                        title = status,
-                        start = day.ToString("yyyy-MM-dd"),
-                        backgroundColor = "#198754",
-                        borderColor = "#198754"
-                    });
+                    continue; // A "Present" record exists, so skip. It will be added later.
                 }
-                // 5. Check if the user was on approved leave for this day
-                else if (leaveRequests.Any(lr => day >= lr.StartDate.Date && day <= lr.EndDate.Date))
+
+                // --- THIS IS THE NEW LOGIC ---
+                // 3. Check if the user was on approved leave for this day.
+                if (leaveRequests.Any(lr => day.Date >= lr.StartDate.Date && day.Date <= lr.EndDate.Date))
                 {
-                    // User was on leave, add a yellow event
                     events.Add(new
                     {
                         title = "On Leave",
                         start = day.ToString("yyyy-MM-dd"),
-                        backgroundColor = "#ffc107",
+                        backgroundColor = "#ffc107", // Yellow
                         borderColor = "#ffc107"
                     });
                 }
                 else
                 {
-                    // 6. If no attendance and no leave, the employee was absent. Add a red event.
+                    // 4. If no attendance AND no leave, they were absent.
                     events.Add(new
                     {
                         title = "Absent",
                         start = day.ToString("yyyy-MM-dd"),
-                        backgroundColor = "#dc3545",
+                        backgroundColor = "#dc3545", // Red
                         borderColor = "#dc3545"
                     });
                 }
             }
+
+            // 5. Finally, add all the "Present" events.
+            events.AddRange(attendances.Values.Select(a => new {
+                title = a.Status,
+                start = a.Date.ToString("yyyy-MM-dd"),
+                backgroundColor = "#198754", // Green
+                borderColor = "#198754"
+            }));
+
             return Json(events);
         }
 

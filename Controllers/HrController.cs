@@ -281,6 +281,8 @@ namespace hrms.Controllers
         }
 
         [HttpGet]
+        [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> GetEmployeeAttendanceData(int employeeId, DateTime start, DateTime end)
         {
             var employee = await _context.Employees.FindAsync(employeeId);
@@ -294,16 +296,18 @@ namespace hrms.Controllers
             {
                 if (day < employee.DateOfJoining.Date || day > DateTime.Today || day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday) continue;
                 if (attendances.ContainsKey(day)) continue;
+
                 if (leaveRequests.Any(lr => day.Date >= lr.StartDate.Date && day.Date <= lr.EndDate.Date))
                 {
-                    events.Add(new { title = "On Leave", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#ffc107", borderColor = "#ffc107" });
+                    events.Add(new { title = "On Leave", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#ffc107" });
                 }
                 else
                 {
-                    events.Add(new { title = "Absent", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#dc3545", borderColor = "#dc3545" });
+                    events.Add(new { title = "Absent", start = day.ToString("yyyy-MM-dd"), backgroundColor = "#dc3545" });
                 }
             }
-            events.AddRange(attendances.Values.Select(a => new { title = a.Status, start = a.Date.ToString("yyyy-MM-dd"), backgroundColor = "#198754", borderColor = "#198754" }));
+            events.AddRange(attendances.Values.Select(a => new { title = a.Status, start = a.Date.ToString("yyyy-MM-dd"), backgroundColor = "#198754" }));
+
             return Json(events);
         }
 
