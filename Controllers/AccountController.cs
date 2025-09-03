@@ -1,11 +1,13 @@
 ﻿using hrms.Data;
 using hrms.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization; // This was a missing directive
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;      // This was a missing directive
 using System.Linq;
-using System.Security.Claims; // <-- Add this
-using Microsoft.AspNetCore.Authentication; // <-- Add this
-using Microsoft.AspNetCore.Authentication.Cookies; // <-- Add this
-using System.Threading.Tasks; // <-- Add this
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace hrms.Controllers
 {
@@ -24,15 +26,14 @@ namespace hrms.Controllers
             return View();
         }
 
-        // This method is now asynchronous
         [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Username.ToLower() == model.Username.ToLower());
+            // Note: Use FirstOrDefaultAsync here
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == model.Username.ToLower());
 
             if (user != null && BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
             {
-                // --- START: User Sign In Logic ---
                 var claims = new[]
                 {
                     new Claim(ClaimTypes.Name, user.Username),
@@ -41,17 +42,13 @@ namespace hrms.Controllers
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    new ClaimsPrincipal(claimsIdentity));
-                // --- END: User Sign In Logic ---
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
                 string redirectUrl = user.Role switch
                 {
                     "hr" => Url.Action("Index", "Hr"),
                     "manager" => Url.Action("Index", "Manager"),
-                    "employee" => Url.Action("Index", "Employee"),
-                    _ => Url.Action("Index", "Home")
+                    _ => Url.Action("Index", "Employee")
                 };
 
                 return Json(new { success = true, redirectUrl });
@@ -62,12 +59,59 @@ namespace hrms.Controllers
             }
         }
 
-        // --- ADD THIS NEW LOGOUT ACTION ---
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
+        }
+
+        // --- CHANGE PASSWORD ACTIONS ---
+
+        [HttpGet] // Added [HttpGet] for clarity
+        [Authorize]
+        public IActionResult ChangePassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var username = HttpContext.User.Identity?.Name;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(model.OldPassword, user.PasswordHash))
+            {
+                ModelState.AddModelError("OldPassword", "Incorrect current password.");
+                return View(model);
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Your password has been changed successfully.";
+
+            return user.Role switch
+            {
+                "hr" => RedirectToAction("Index", "Hr"),
+                "manager" => RedirectToAction("Index", "Manager"),
+                _ => RedirectToAction("Index", "Employee"),
+            };
         }
     }
 }
